@@ -7,7 +7,7 @@ import '../models/decision_wheel_item.dart';
 import '../models/love_note.dart';
 
 /// Haptic feedback intensity options.
-enum AppHapticType { light, medium, selection }
+enum AppHapticType { light, medium, heavy, selection }
 
 /// Local storage service wrapping SharedPreferences.
 class PreferencesService {
@@ -336,6 +336,9 @@ class PreferencesService {
           break;
         case AppHapticType.medium:
           await HapticFeedback.mediumImpact();
+          break;
+        case AppHapticType.heavy:
+          await HapticFeedback.heavyImpact();
           break;
         case AppHapticType.selection:
           await HapticFeedback.selectionClick();

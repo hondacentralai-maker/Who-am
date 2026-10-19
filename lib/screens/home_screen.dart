@@ -13,6 +13,7 @@ import 'know_me_screen.dart';
 import 'love_notes_screen.dart';
 import 'online_room_screen.dart';
 import 'partner_link_dialog.dart';
+import 'party_games_hub_screen.dart';
 import 'settings_screen.dart';
 import 'share_moments_dialog.dart';
 import 'structured_session_screen.dart';
@@ -486,6 +487,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                   color: AppColors.ink,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Mode 0: ألعاب الجلسات والتجمعات (Party Games Hub)
+              _ModeTile(
+                icon: Icons.celebration_rounded,
+                title: 'ألعاب الجلسات والتجمعات',
+                subtitle:
+                    '6 ألعاب حماسية للجلسات والبنات (إنسان حيوان، مين فينا، 5 ثواني، الجاسوسة، المحظورات، لو خيروك)',
+                badgeText: 'مهرجان الجلسات 🥳',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PartyGamesHubScreen(),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

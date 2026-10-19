@@ -13,6 +13,7 @@ import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import 'auth_screen.dart';
 import 'partner_link_dialog.dart';
+import 'party_games_hub_screen.dart';
 
 class OnlineRoomScreen extends StatefulWidget {
   const OnlineRoomScreen({super.key});
@@ -209,42 +210,63 @@ class _OnlineRoomScreenState extends State<OnlineRoomScreen> {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.cardBorder),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(Icons.favorite_rounded, color: AppColors.accentPink),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                profile.isPartnerLinked
-                                    ? 'الشريك المرتبط: ${profile.linkedPartnerEmail}'
-                                    : 'لم يتم ربط شريك دائم بعد',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13,
-                                  color: AppColors.ink,
-                                ),
+                        Row(
+                          children: [
+                            const Icon(Icons.favorite_rounded, color: AppColors.accentPink),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    profile.isPartnerLinked
+                                        ? 'الشريك المرتبط: ${profile.linkedPartnerEmail}'
+                                        : 'لم يتم ربط شريك دائم بعد',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                      color: AppColors.ink,
+                                    ),
+                                  ),
+                                  Text(
+                                    profile.isPartnerLinked
+                                        ? 'دعوة مباشرة ستُرسل فور إنشاء الغرفة بضغطة واحدة 📲'
+                                        : 'اربط حساب شريكك لتسهيل الدخول دون الحاجة لرموز',
+                                    style: const TextStyle(color: AppColors.muted, fontSize: 11),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                profile.isPartnerLinked
-                                    ? 'دعوة مباشرة ستُرسل فور إنشاء الغرفة بضغطة واحدة 📲'
-                                    : 'اربط حساب شريكك لتسهيل الدخول دون الحاجة لرموز',
-                                style: const TextStyle(color: AppColors.muted, fontSize: 11),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                PartnerLinkDialog.show(
+                                  context,
+                                  onLinked: () => setState(() {}),
+                                );
+                              },
+                              child: Text(profile.isPartnerLinked ? 'تعديل' : 'ربط 🔗'),
+                            ),
+                          ],
+                        ),
+                        if (profile.isPartnerLinked) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.purple,
                               ),
-                            ],
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => _checkAuthAndAct(_createRoom),
+                              icon: const Icon(Icons.send_rounded),
+                              label: const Text('دعوة الشريك والبدء فوراً 💌'),
+                            ),
                           ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            PartnerLinkDialog.show(
-                              context,
-                              onLinked: () => setState(() {}),
-                            );
-                          },
-                          child: Text(profile.isPartnerLinked ? 'تعديل' : 'ربط 🔗'),
-                        ),
+                        ],
                       ],
                     ),
                   );
@@ -330,6 +352,49 @@ class _OnlineRoomScreenState extends State<OnlineRoomScreen> {
                         icon: const Icon(Icons.login_rounded),
                         label: const Text('انضمام إلى الغرفة'),
                       ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Party Games Hub Quick Access
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.palePurple.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.purple.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Text('🥳', style: TextStyle(fontSize: 32)),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ألعاب الجلسات والتجمعات',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          Text(
+                            'هل أنتم مجتمعون في نفس المكان؟ العبوا فوراً بدون إنترنت!',
+                            style: TextStyle(fontSize: 11, color: AppColors.muted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    FilledButton.tonal(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PartyGamesHubScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text('دخول'),
                     ),
                   ],
                 ),
