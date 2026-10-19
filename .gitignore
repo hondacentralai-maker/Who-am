@@ -7,9 +7,11 @@ build/
 .idea/
 .vscode/
 android/.gradle/
+android/.kotlin/
 android/local.properties
 ios/Flutter/Generated.xcconfig
 ios/Flutter/flutter_export_environment.sh
 *.apk
 *.aab
 *.iml
+Antigravity_Universal_Project_Kit/

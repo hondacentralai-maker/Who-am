@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/home_screen.dart';
 import 'services/preferences_service.dart';
 import 'services/supabase_service.dart';
@@ -43,6 +44,14 @@ class _ArabicCouplesGameState extends State<ArabicCouplesGame> {
       darkTheme: AppTheme.dark,
       themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       locale: const Locale('ar', ''),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ar', ''),
+      ],
       builder: (context, child) {
         final fontScale = PreferencesService.fontScale;
         return Directionality(

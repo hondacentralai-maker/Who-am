@@ -3,6 +3,7 @@ import '../models/character.dart';
 import '../services/game_data_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import 'online_room_screen.dart';
 import 'pass_device_screen.dart';
 
 // ─── 1. Character Intro Screen ───────────────────────────
@@ -61,7 +62,20 @@ class CharacterIntroScreen extends StatelessWidget {
                   }
                 },
                 icon: const Icon(Icons.play_arrow_rounded),
-                label: const Text('ابدأ اختيار الشخصيات'),
+                label: const Text('ابدأ على هذا الجهاز (أوفلاين)'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const OnlineRoomScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.cloud_sync_rounded),
+                label: const Text('اللعب عن بُعد بين هاتفين 🌐'),
               ),
             ],
           ),

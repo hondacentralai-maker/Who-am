@@ -450,10 +450,10 @@ class _HomeScreenState extends State<HomeScreen> {
               // Mode 6: غرف اللعب عن بعد (Supabase)
               _ModeTile(
                 icon: Icons.cloud_sync_rounded,
-                title: 'غرفة اللعب عن بعد (Supabase)',
+                title: 'غرف اللعب عن بُعد (جميع الألعاب)',
                 subtitle:
-                    'مزامنة مباشرة عبر السحابة للعب بين هاتفين برمز سداسي آمن',
-                badgeText: 'سحابي ☁️',
+                    'العبوا معاً من هاتفين: بطاقات الحوار، قد إيش تعرفني؟، وخمن الشخصية بمزامنة سريعة',
+                badgeText: 'أونلاين 🌐',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -591,7 +591,7 @@ class _ModeTile extends StatelessWidget {
                 ),
               ),
               const Icon(
-                Icons.arrow_forward_ios_rounded,
+                Icons.arrow_back_ios_new_rounded,
                 size: 14,
                 color: AppColors.purple,
               ),

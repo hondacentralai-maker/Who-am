@@ -287,7 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     leading: const Icon(Icons.shield_outlined,
                         color: AppColors.purple),
                     title: const Text('سياسة الخصوصية وشروط الاستخدام'),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                    trailing: const Icon(Icons.arrow_back_ios_new_rounded,
                         size: 14),
                     onTap: () => Navigator.push(
                       context,

@@ -258,7 +258,12 @@ class _StructuredSessionScreenState extends State<StructuredSessionScreen> {
               Expanded(
                 child: FilledButton.icon(
                   onPressed: _nextStep,
-                  icon: const Icon(Icons.arrow_back),
+                  icon: Icon(
+                    stepNum == totalSteps
+                        ? Icons.check_circle_rounded
+                        : Icons.arrow_back_ios_new_rounded,
+                    size: 18,
+                  ),
                   label: Text(
                     stepNum == totalSteps ? 'إنهاء الجلسة 🎉' : 'الخطوة التالية',
                   ),

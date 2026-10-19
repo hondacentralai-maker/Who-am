@@ -3,6 +3,7 @@ import '../models/know_me_question.dart';
 import '../services/game_data_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import 'online_room_screen.dart';
 import 'pass_device_screen.dart';
 
 class KnowMeScreen extends StatefulWidget {
@@ -35,9 +36,13 @@ class _KnowMeScreenState extends State<KnowMeScreen> {
 
   Future<void> _loadQuestions() async {
     final list = await GameDataService.loadKnowMeQuestions();
+    final customMaps = PreferencesService.getCustomKnowMeQuestions();
+    final customQuestions =
+        customMaps.map((m) => KnowMeQuestion.fromJson(m)).toList();
+    final combined = [...customQuestions, ...list];
     if (mounted) {
       setState(() {
-        _questions = list..shuffle();
+        _questions = combined..shuffle();
         _loading = false;
       });
     }
@@ -165,7 +170,7 @@ class _KnowMeScreenState extends State<KnowMeScreen> {
             child: const Text('إلغاء'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               final q = questionCtrl.text.trim();
               if (q.isNotEmpty) {
                 final newQ = KnowMeQuestion(
@@ -174,15 +179,20 @@ class _KnowMeScreenState extends State<KnowMeScreen> {
                   question: q,
                   hint: hintCtrl.text.trim(),
                 );
-                setState(() {
-                  _questions.insert(0, newQ);
-                  _currentIndex = 0;
-                  _step = 0;
-                });
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('تمت إضافة السؤال بنجاح! 💜')),
-                );
+                await PreferencesService.addCustomKnowMeQuestion(newQ.toJson());
+                if (mounted) {
+                  setState(() {
+                    _questions.insert(0, newQ);
+                    _currentIndex = 0;
+                    _step = 0;
+                  });
+                }
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('تمت إضافة السؤال وحفظه بنجاح! 💜')),
+                  );
+                }
               }
             },
             child: const Text('إضافة'),
@@ -200,6 +210,18 @@ class _KnowMeScreenState extends State<KnowMeScreen> {
       appBar: AppBar(
         title: const Text('قد إيش تعرفني؟ 💜'),
         actions: [
+          IconButton(
+            tooltip: 'اللعب عن بُعد بين هاتفين',
+            icon: const Icon(Icons.cloud_sync_rounded),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const OnlineRoomScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'إضافة سؤال',
             icon: const Icon(Icons.add_circle_outline_rounded),

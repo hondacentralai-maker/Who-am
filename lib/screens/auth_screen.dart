@@ -154,6 +154,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  textDirection: TextDirection.ltr,
                   decoration: const InputDecoration(
                     labelText: 'البريد الإلكتروني',
                     prefixIcon: Icon(Icons.email_outlined),
@@ -174,6 +175,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
+                  textDirection: TextDirection.ltr,
                   decoration: const InputDecoration(
                     labelText: 'كلمة المرور',
                     prefixIcon: Icon(Icons.lock_outline),

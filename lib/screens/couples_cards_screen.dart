@@ -208,7 +208,7 @@ class _CouplesCardsScreenState extends State<CouplesCardsScreen> {
                                 ],
                               ),
                             ),
-                            Icon(Icons.arrow_forward_ios_rounded,
+                            Icon(Icons.arrow_back_ios_new_rounded,
                                 size: 14, color: AppColors.purple),
                           ],
                         ),

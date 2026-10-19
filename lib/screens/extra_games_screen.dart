@@ -97,7 +97,7 @@ class _ExtraGamesScreenState extends State<ExtraGamesScreen> {
             ),
           ),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios_rounded,
+        trailing: const Icon(Icons.arrow_back_ios_new_rounded,
             size: 14, color: AppColors.purple),
         onTap: onTap,
       ),

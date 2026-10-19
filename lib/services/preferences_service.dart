@@ -1,6 +1,10 @@
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/achievement.dart';
+
+/// Haptic feedback intensity options.
+enum AppHapticType { light, medium, selection }
 
 /// Local storage service wrapping SharedPreferences.
 class PreferencesService {
@@ -67,6 +71,37 @@ class PreferencesService {
     final list = getCustomCards();
     list.removeWhere((c) => c['id'] == id);
     await saveCustomCards(list);
+  }
+
+  // ─── Custom Know-Me Questions (CRUD) ───────────────
+  static const _customKnowMeKey = 'custom_know_me_questions_v1';
+
+  static List<Map<String, dynamic>> getCustomKnowMeQuestions() {
+    final raw = _p.getString(_customKnowMeKey);
+    if (raw == null) return [];
+    try {
+      return (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<void> saveCustomKnowMeQuestions(
+      List<Map<String, dynamic>> questions) =>
+      _p.setString(_customKnowMeKey, jsonEncode(questions));
+
+  static Future<void> addCustomKnowMeQuestion(
+      Map<String, dynamic> question) async {
+    final list = getCustomKnowMeQuestions();
+    list.add(question);
+    await saveCustomKnowMeQuestions(list);
+    await unlockAchievement('custom_creator');
+  }
+
+  static Future<void> deleteCustomKnowMeQuestion(String id) async {
+    final list = getCustomKnowMeQuestions();
+    list.removeWhere((q) => q['id'] == id);
+    await saveCustomKnowMeQuestions(list);
   }
 
   // ─── Active Session Resumption ──────────────────────
@@ -286,6 +321,27 @@ class PreferencesService {
   static bool get soundEnabled => _p.getBool('sound_enabled') ?? true;
   static Future<void> setSoundEnabled(bool v) =>
       _p.setBool('sound_enabled', v);
+
+  /// Triggers haptic feedback safely according to sound & haptic settings.
+  static Future<void> triggerHaptic(
+      [AppHapticType type = AppHapticType.light]) async {
+    if (!soundEnabled) return;
+    try {
+      switch (type) {
+        case AppHapticType.light:
+          await HapticFeedback.lightImpact();
+          break;
+        case AppHapticType.medium:
+          await HapticFeedback.mediumImpact();
+          break;
+        case AppHapticType.selection:
+          await HapticFeedback.selectionClick();
+          break;
+      }
+    } catch (_) {
+      // Graceful fallback on devices/platforms without haptics
+    }
+  }
 
   // ─── Auth Cache ────────────────────────────────────
   static String? get cachedEmail => _p.getString('cached_email');

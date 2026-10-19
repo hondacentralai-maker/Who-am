@@ -124,9 +124,31 @@ create policy "Users can manage their own favorites"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
--- 6. Enable Realtime Publications
-begin;
-  -- Add tables to realtime publication if not already present
-  drop publication if exists supabase_realtime;
-  create publication supabase_realtime for table public.game_rooms, public.room_events;
-commit;
+-- 6. Enable Realtime Publications (Safe & Idempotent for Supabase)
+do $$
+begin
+  -- Ensure publication exists or use existing Supabase system publication
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+
+  -- Add game_rooms if not already in publication
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' 
+      and schemaname = 'public' 
+      and tablename = 'game_rooms'
+  ) then
+    alter publication supabase_realtime add table public.game_rooms;
+  end if;
+
+  -- Add room_events if not already in publication
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' 
+      and schemaname = 'public' 
+      and tablename = 'room_events'
+  ) then
+    alter publication supabase_realtime add table public.room_events;
+  end if;
+end $$;
