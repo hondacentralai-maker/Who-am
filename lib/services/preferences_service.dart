@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/achievement.dart';
+import '../models/couples_profile.dart';
+import '../models/decision_wheel_item.dart';
+import '../models/love_note.dart';
 
 /// Haptic feedback intensity options.
 enum AppHapticType { light, medium, selection }
@@ -347,4 +350,138 @@ class PreferencesService {
   static String? get cachedEmail => _p.getString('cached_email');
   static Future<void> setCachedEmail(String? v) =>
       v == null ? _p.remove('cached_email') : _p.setString('cached_email', v);
+
+  // ─── Couples Profile & Days Together ───────────────
+  static const _profileKey = 'couples_profile_v1';
+
+  static CouplesProfile getCouplesProfile() {
+    final raw = _p.getString(_profileKey);
+    if (raw == null) {
+      final defaultProfile = CouplesProfile(
+        partner1Name: 'أنا',
+        partner2Name: 'شريكي',
+        startDate: DateTime(DateTime.now().year, 1, 1),
+        specialTitle: 'ذكرى ارتباطنا',
+        partnerCode: 'LOVE-${(1000 + DateTime.now().millisecondsSinceEpoch % 9000)}',
+      );
+      saveCouplesProfile(defaultProfile);
+      return defaultProfile;
+    }
+    try {
+      return CouplesProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return CouplesProfile(
+        partner1Name: 'أنا',
+        partner2Name: 'شريكي',
+        startDate: DateTime(DateTime.now().year, 1, 1),
+        specialTitle: 'ذكرى ارتباطنا',
+        partnerCode: 'LOVE-7777',
+      );
+    }
+  }
+
+  static Future<void> saveCouplesProfile(CouplesProfile profile) =>
+      _p.setString(_profileKey, jsonEncode(profile.toJson()));
+
+  static Future<void> linkPartner({
+    required String partnerEmail,
+    String? partnerName,
+    String? partnerId,
+  }) async {
+    final current = getCouplesProfile();
+    final updated = current.copyWith(
+      linkedPartnerEmail: partnerEmail,
+      linkedPartnerId: partnerId,
+      partner2Name: (partnerName != null && partnerName.isNotEmpty)
+          ? partnerName
+          : current.partner2Name,
+    );
+    await saveCouplesProfile(updated);
+  }
+
+  static Future<void> unlinkPartner() async {
+    final current = getCouplesProfile();
+    final updated = current.copyWith(clearLinkedPartner: true);
+    await saveCouplesProfile(updated);
+  }
+
+  // ─── Love Notes & Time Capsules ────────────────────
+  static const _notesKey = 'couples_love_notes_v1';
+
+  static List<LoveNote> getLoveNotes() {
+    final raw = _p.getString(_notesKey);
+    if (raw == null) return _defaultLoveNotes();
+    try {
+      final list = (jsonDecode(raw) as List)
+          .map((m) => LoveNote.fromJson(m as Map<String, dynamic>))
+          .toList();
+      return list.isEmpty ? _defaultLoveNotes() : list;
+    } catch (_) {
+      return _defaultLoveNotes();
+    }
+  }
+
+  static List<LoveNote> _defaultLoveNotes() {
+    return [
+      LoveNote(
+        id: 'default_note_1',
+        authorName: 'فريق سوالفنا 💜',
+        title: 'أهلاً بكما في مساحتكم الخاصة ✨',
+        content:
+            'هذه المساحة مخصصة لكما فقط لكتابة رسائل الحب والكبسولات الزمنية التي تُفتح في تواريخكم المميزة! جربوا كتابة أول رسالة الآن 💌',
+        createdAt: DateTime.now(),
+        isOpened: true,
+        emoji: '🎁',
+      ),
+    ];
+  }
+
+  static Future<void> saveLoveNotes(List<LoveNote> notes) =>
+      _p.setString(_notesKey, jsonEncode(notes.map((n) => n.toJson()).toList()));
+
+  static Future<void> addLoveNote(LoveNote note) async {
+    final list = getLoveNotes();
+    list.insert(0, note);
+    await saveLoveNotes(list);
+    await unlockAchievement('custom_creator');
+  }
+
+  static Future<void> deleteLoveNote(String id) async {
+    final list = getLoveNotes();
+    list.removeWhere((n) => n.id == id);
+    await saveLoveNotes(list);
+  }
+
+  static Future<void> markLoveNoteOpened(String id) async {
+    final list = getLoveNotes();
+    final idx = list.indexWhere((n) => n.id == id);
+    if (idx != -1) {
+      list[idx] = list[idx].copyWith(isOpened: true);
+      await saveLoveNotes(list);
+    }
+  }
+
+  // ─── Custom Decision Wheel Items ───────────────────
+  static const _wheelKey = 'couples_custom_wheel_items_v1';
+
+  static List<DecisionWheelItem> getCustomWheelItems() {
+    final raw = _p.getString(_wheelKey);
+    if (raw == null) return [];
+    try {
+      return (jsonDecode(raw) as List)
+          .map((m) => DecisionWheelItem.fromJson(m as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<void> saveCustomWheelItems(List<DecisionWheelItem> items) =>
+      _p.setString(_wheelKey, jsonEncode(items.map((i) => i.toJson()).toList()));
+
+  static Future<void> addCustomWheelItem(DecisionWheelItem item) async {
+    final list = getCustomWheelItems();
+    list.add(item);
+    await saveCustomWheelItems(list);
+  }
 }

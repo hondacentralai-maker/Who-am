@@ -470,4 +470,61 @@ class SupabaseService {
       return {};
     }
   }
+
+  // ─── Direct Partner Invitations (1-Click) ──────────
+  /// Subscribes to the current user's personal direct invitations channel.
+  static RealtimeChannel? subscribeToUserInvites({
+    required String userIdentifier,
+    required Function(Map<String, dynamic> payload) onInviteReceived,
+  }) {
+    if (!isInitialized) return null;
+    final sanitized = userIdentifier
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+    final channel = client.channel(
+      'invites_$sanitized',
+      opts: const RealtimeChannelConfig(self: true),
+    );
+
+    channel.onBroadcast(
+      event: 'room_invite',
+      callback: (payload) {
+        onInviteReceived(payload);
+      },
+    );
+
+    channel.subscribe();
+    return channel;
+  }
+
+  /// Sends a direct 1-click room invitation to a linked partner.
+  static Future<bool> sendPartnerInvite({
+    required String targetPartnerIdentifier,
+    required String roomId,
+    required String roomCode,
+    required String hostName,
+  }) async {
+    if (!isInitialized) return false;
+    try {
+      final sanitized = targetPartnerIdentifier
+          .trim()
+          .toLowerCase()
+          .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+      final channel = client.channel('invites_$sanitized');
+      channel.subscribe();
+      await channel.sendBroadcastMessage(
+        event: 'room_invite',
+        payload: {
+          'room_id': roomId,
+          'room_code': roomCode,
+          'host_name': hostName,
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 }

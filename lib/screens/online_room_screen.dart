@@ -12,6 +12,7 @@ import '../services/preferences_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import 'auth_screen.dart';
+import 'partner_link_dialog.dart';
 
 class OnlineRoomScreen extends StatefulWidget {
   const OnlineRoomScreen({super.key});
@@ -69,6 +70,15 @@ class _OnlineRoomScreenState extends State<OnlineRoomScreen> {
     setState(() => _isLoading = true);
     try {
       final room = await SupabaseService.createRoom();
+      final profile = PreferencesService.getCouplesProfile();
+      if (profile.isPartnerLinked) {
+        SupabaseService.sendPartnerInvite(
+          targetPartnerIdentifier: profile.linkedPartnerEmail!,
+          roomId: room['id'],
+          roomCode: room['room_code'],
+          hostName: profile.partner1Name,
+        );
+      }
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -187,6 +197,60 @@ class _OnlineRoomScreenState extends State<OnlineRoomScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+
+              // Linked Partner Bar
+              Builder(
+                builder: (context) {
+                  final profile = PreferencesService.getCouplesProfile();
+                  return Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.palePurple,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.favorite_rounded, color: AppColors.accentPink),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                profile.isPartnerLinked
+                                    ? 'الشريك المرتبط: ${profile.linkedPartnerEmail}'
+                                    : 'لم يتم ربط شريك دائم بعد',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                              Text(
+                                profile.isPartnerLinked
+                                    ? 'دعوة مباشرة ستُرسل فور إنشاء الغرفة بضغطة واحدة 📲'
+                                    : 'اربط حساب شريكك لتسهيل الدخول دون الحاجة لرموز',
+                                style: const TextStyle(color: AppColors.muted, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            PartnerLinkDialog.show(
+                              context,
+                              onLinked: () => setState(() {}),
+                            );
+                          },
+                          child: Text(profile.isPartnerLinked ? 'تعديل' : 'ربط 🔗'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
 
               // Create Room Option
               Container(
@@ -675,6 +739,41 @@ class _ActiveOnlineRoomScreenState extends State<ActiveOnlineRoomScreen> {
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  Future<void> _sendPartnerInvite() async {
+    final profile = PreferencesService.getCouplesProfile();
+    if (!profile.isPartnerLinked) {
+      PartnerLinkDialog.show(context, onLinked: () => setState(() {}));
+      return;
+    }
+
+    final target = profile.linkedPartnerEmail!;
+    final success = await SupabaseService.sendPartnerInvite(
+      targetPartnerIdentifier: target,
+      roomId: widget.roomId,
+      roomCode: widget.roomCode,
+      hostName: profile.partner1Name,
+    );
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF2E7D32),
+            content: Text(
+              'تم إرسال دعوة مباشرة لشريكك ($target)! 📲 ستظهر له نافذة الانضمام فوراً.',
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تعذر إرسال الدعوة المباشرة، يمكنك مشاركة الرمز يدوياً 📋'),
+          ),
+        );
+      }
+    }
   }
 
   void _confirmLeaveRoom() {
@@ -1835,6 +1934,11 @@ class _ActiveOnlineRoomScreenState extends State<ActiveOnlineRoomScreen> {
       appBar: AppBar(
         title: Text('غرفة: ${widget.roomCode}'),
         actions: [
+          IconButton(
+            tooltip: 'دعوة مباشرة للشريك المرتبط 📲',
+            icon: const Icon(Icons.send_to_mobile_rounded),
+            onPressed: _sendPartnerInvite,
+          ),
           IconButton(
             tooltip: 'نسخ رمز الغرفة',
             icon: const Icon(Icons.copy_rounded),

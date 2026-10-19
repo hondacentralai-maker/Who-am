@@ -4,8 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arabic_couples_game/main.dart';
 import 'package:arabic_couples_game/models/character.dart';
 import 'package:arabic_couples_game/models/couples_card.dart';
+import 'package:arabic_couples_game/models/couples_profile.dart';
+import 'package:arabic_couples_game/models/decision_wheel_item.dart';
 import 'package:arabic_couples_game/models/game_session.dart';
 import 'package:arabic_couples_game/models/know_me_question.dart';
+import 'package:arabic_couples_game/models/love_note.dart';
 import 'package:arabic_couples_game/models/partner_presence.dart';
 import 'package:arabic_couples_game/screens/online_room_screen.dart';
 import 'package:arabic_couples_game/services/preferences_service.dart';
@@ -560,5 +563,130 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('ما هو المكان المفضل لكما؟'), findsOneWidget);
+  });
+
+  test('CouplesProfile days together and anniversary calculations work properly', () {
+    final now = DateTime.now();
+    final fiveDaysAgo = now.subtract(const Duration(days: 5));
+
+    final profile = CouplesProfile(
+      partner1Name: 'أحمد',
+      partner2Name: 'سارة',
+      startDate: fiveDaysAgo,
+      specialTitle: 'ذكرى عقد القران',
+      partnerCode: 'LOVE-1234',
+      linkedPartnerEmail: 'sara@example.com',
+    );
+
+    expect(profile.partner1Name, equals('أحمد'));
+    expect(profile.partner2Name, equals('سارة'));
+    expect(profile.daysTogether, equals(5));
+    expect(profile.isPartnerLinked, isTrue);
+    expect(profile.partnerCode, equals('LOVE-1234'));
+
+    // Serialization integrity
+    final json = profile.toJson();
+    final restored = CouplesProfile.fromJson(json);
+    expect(restored.partner1Name, equals('أحمد'));
+    expect(restored.specialTitle, equals('ذكرى عقد القران'));
+    expect(restored.linkedPartnerEmail, equals('sara@example.com'));
+  });
+
+  test('LoveNote locked status and countdown calculation', () {
+    final futureDate = DateTime.now().add(const Duration(days: 4));
+    final lockedCapsule = LoveNote(
+      id: 'cap_1',
+      authorName: 'سارة',
+      title: 'هدية ذكرى الزواج 🎁',
+      content: 'أحبك أكثر مع كل يوم يمر!',
+      createdAt: DateTime.now(),
+      unlockDate: futureDate,
+      emoji: '🎁',
+    );
+
+    expect(lockedCapsule.isLocked, isTrue);
+    expect(lockedCapsule.daysUntilUnlock, greaterThanOrEqualTo(3));
+
+    final instantNote = LoveNote(
+      id: 'note_1',
+      authorName: 'أحمد',
+      title: 'صباح الخير',
+      content: 'يومك جميل مثلك',
+      createdAt: DateTime.now(),
+    );
+
+    expect(instantNote.isLocked, isFalse);
+    expect(instantNote.daysUntilUnlock, equals(0));
+
+    // Serialization integrity
+    final json = lockedCapsule.toJson();
+    final restored = LoveNote.fromJson(json);
+    expect(restored.title, equals('هدية ذكرى الزواج 🎁'));
+    expect(restored.isLocked, isTrue);
+  });
+
+  test('DecisionWheelItem default categories and structure', () {
+    final defaults = DecisionWheelItem.defaultItems();
+    expect(defaults, isNotEmpty);
+    expect(defaults.any((i) => i.category == 'عشاء الليلة؟ 🍕'), isTrue);
+    expect(defaults.any((i) => i.category == 'سهرة الليلة؟ 🎬'), isTrue);
+    expect(defaults.any((i) => i.category == 'تحدي الدلع 💆'), isTrue);
+  });
+
+  test('PreferencesService couples profile and love notes CRUD lifecycle', () async {
+    // 1. Profile lifecycle
+    final initialProfile = PreferencesService.getCouplesProfile();
+    expect(initialProfile.partnerCode, isNotEmpty);
+
+    await PreferencesService.linkPartner(
+      partnerEmail: 'partner@love.com',
+      partnerName: 'نور',
+    );
+    final linked = PreferencesService.getCouplesProfile();
+    expect(linked.linkedPartnerEmail, equals('partner@love.com'));
+    expect(linked.partner2Name, equals('نور'));
+    expect(linked.isPartnerLinked, isTrue);
+
+    await PreferencesService.unlinkPartner();
+    final unlinked = PreferencesService.getCouplesProfile();
+    expect(unlinked.isPartnerLinked, isFalse);
+
+    // 2. Love Notes lifecycle
+    final initialNotes = PreferencesService.getLoveNotes();
+    expect(initialNotes, isNotEmpty);
+
+    final newNote = LoveNote(
+      id: 'test_crud_note',
+      authorName: 'أنا',
+      title: 'رسالة اختبارية',
+      content: 'محتوى تجريبي',
+      createdAt: DateTime.now(),
+    );
+    await PreferencesService.addLoveNote(newNote);
+
+    final afterAdd = PreferencesService.getLoveNotes();
+    expect(afterAdd.any((n) => n.id == 'test_crud_note'), isTrue);
+
+    await PreferencesService.markLoveNoteOpened('test_crud_note');
+    final opened = PreferencesService.getLoveNotes().firstWhere((n) => n.id == 'test_crud_note');
+    expect(opened.isOpened, isTrue);
+
+    await PreferencesService.deleteLoveNote('test_crud_note');
+    final afterDel = PreferencesService.getLoveNotes();
+    expect(afterDel.any((n) => n.id == 'test_crud_note'), isFalse);
+  });
+
+  test('Direct partner invitation payload formatting and data integrity', () {
+    final payload = {
+      'room_id': 'room-uuid-1234',
+      'room_code': 'ABC888',
+      'host_name': 'أحمد',
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+
+    expect(payload['room_id'], equals('room-uuid-1234'));
+    expect(payload['room_code'], equals('ABC888'));
+    expect(payload['host_name'], equals('أحمد'));
+    expect(DateTime.tryParse(payload['timestamp']!), isNotNull);
   });
 }

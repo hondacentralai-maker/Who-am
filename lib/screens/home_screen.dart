@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/preferences_service.dart';
+import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/couples_days_banner.dart';
 import 'achievements_screen.dart';
 import 'character_screens.dart';
 import 'couples_cards_screen.dart';
+import 'decision_wheel_screen.dart';
 import 'extra_games_screen.dart';
 import 'know_me_screen.dart';
+import 'love_notes_screen.dart';
 import 'online_room_screen.dart';
+import 'partner_link_dialog.dart';
 import 'settings_screen.dart';
+import 'share_moments_dialog.dart';
 import 'structured_session_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,11 +28,105 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _activeSession;
+  RealtimeChannel? _invitesChannel;
 
   @override
   void initState() {
     super.initState();
     _loadState();
+    _listenForPartnerInvites();
+  }
+
+  void _listenForPartnerInvites() {
+    final profile = PreferencesService.getCouplesProfile();
+    final userIdentifier =
+        SupabaseService.currentUser?.email ?? profile.partnerCode;
+    _invitesChannel = SupabaseService.subscribeToUserInvites(
+      userIdentifier: userIdentifier,
+      onInviteReceived: _handleIncomingInvite,
+    );
+  }
+
+  @override
+  void dispose() {
+    if (_invitesChannel != null && SupabaseService.isInitialized) {
+      SupabaseService.client.removeChannel(_invitesChannel!);
+    }
+    super.dispose();
+  }
+
+  void _handleIncomingInvite(Map<String, dynamic> payload) {
+    if (!mounted) return;
+    PreferencesService.triggerHaptic(AppHapticType.medium);
+    final hostName = payload['host_name']?.toString() ?? 'شريكك';
+    final roomId = payload['room_id']?.toString();
+    final roomCode = payload['room_code']?.toString();
+    if (roomId == null || roomCode == null) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Row(
+          children: [
+            Icon(Icons.mark_email_unread_rounded, color: AppColors.accentPink),
+            SizedBox(width: 8),
+            Text('دعوة لعب مباشرة! 💌'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'أنشأ $hostName غرفة لعب عن بُعد ويرغب في اللعب معك الآن!',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15, height: 1.6),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.palePurple,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                'رمز الغرفة: $roomCode',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  color: AppColors.deepPurple,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('لاحقاً'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ActiveOnlineRoomScreen(
+                    roomId: roomId,
+                    roomCode: roomCode,
+                    isHost: false,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: const Text('قبول والانضمام فوراً 🎮'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _loadState() {
@@ -146,6 +247,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
 
           IconButton(
+            tooltip: 'ربط الشريك 🔗',
+            icon: const Icon(Icons.link_rounded, color: AppColors.purple),
+            onPressed: () {
+              PartnerLinkDialog.show(context, onLinked: _loadState);
+            },
+          ),
+
+          IconButton(
+            tooltip: 'بطاقة الحب والتوافق 💌',
+            icon: const Icon(Icons.favorite_rounded, color: AppColors.accentPink),
+            onPressed: () {
+              ShareMomentsDialog.show(context);
+            },
+          ),
+
+          IconButton(
             tooltip: 'الإعدادات',
             icon: const Icon(Icons.settings_outlined, color: AppColors.ink),
             onPressed: () async {
@@ -169,6 +286,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Couples Days Banner (Days Together, Anniversary & Names)
+              CouplesDaysBanner(onProfileUpdated: _loadState),
+
               // Hero Banner Matching Reference Screen 1
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -458,6 +578,38 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const OnlineRoomScreen(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Mode 7: عجلة القرارات اللطيفة للأزواج
+              _ModeTile(
+                icon: Icons.sync_rounded,
+                title: 'عجلة القرارات اللطيفة للأزواج',
+                subtitle:
+                    'حسم عشاء الليلة، السهرة، وتحديات الدلع بعجلة دوارة تفاعلية',
+                badgeText: 'عفوية 🎡',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DecisionWheelScreen(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Mode 8: كبسولة رسائل الحب والذكريات
+              _ModeTile(
+                icon: Icons.mark_email_read_rounded,
+                title: 'كبسولة رسائل الحب والذكريات',
+                subtitle:
+                    'اكتبا لبعضكما رسائل وكبسولات زمنية مقفلة تُفتح في التواريخ السعيدة',
+                badgeText: 'رومانسي 💌',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LoveNotesScreen(),
                   ),
                 ),
               ),

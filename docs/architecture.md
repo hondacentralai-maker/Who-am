@@ -55,3 +55,31 @@ graph TD
 - **في «خمن الشخصية»:** معرف الشخصية السرية لا يُرسل عبر الشبكة حتى لحظة التخمين النهائي أو إعلان الفوز.
 - **في «قد إيش تعرفني؟»:** إشعار اكتمال الإجابة السرية يُرسل أولاً، ثم تُكشف الإجابتان معاً عند إرسال التخمين.
 - **الصمود بدون اتصال:** في حال فقدان الاتصال، تحتفظ الواجهات بالحالة المحلية وتعرض مؤشر إعادة الاتصال المباشر.
+
+---
+
+# البنية الهندسية للمرحلة الرابعة: ربط الشريك الدائم ونمط الحياة الزوجية (Phase 4 Architecture)
+
+## 1. نموذج الدعوة المباشرة بضغطة واحدة (1-Click Partner Invitations)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor PlayerA as الشريك (المضيف)
+    participant ChannelA as قناة الدعوات السحابية
+    participant ChannelB as قناة استماع الشريك
+    actor PlayerB as الشريك (المستلم)
+
+    PlayerA->>PlayerA: ينقر «إنشاء غرفة» أو «دعوة مباشرة»
+    PlayerA->>ChannelA: بث مباشر لحدث room_invite على قناة invites_{partnerEmail}
+    ChannelA->>ChannelB: تسليم الحدث عبر Supabase Realtime WebSocket
+    ChannelB->>PlayerB: إشعار فوري ونافذة منبثقة «دعوة للعب من أحمد!»
+    PlayerB->>PlayerB: يضغط «قبول والانضمام فوراً 🎮»
+    PlayerB->>PlayerA: انضمام فوري للغرفة بدون كتابة أي رمز سداسي
+```
+
+## 2. جدول أحداث الدعوات المباشرة
+| القناة | الحدث | البيانات (`payload`) | التأثير في الواجهة |
+|---|---|---|---|
+| `invites_{userIdentifier}` | `room_invite` | `{ room_id, room_code, host_name, timestamp }` | إظهار نافذة قبول فورية والانتقال للغرفة النشطة مباشرة |
+
