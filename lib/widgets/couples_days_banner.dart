@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/couples_profile.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import 'bouncy_tap.dart';
 
 /// An aesthetic couples banner displaying days together, upcoming anniversary,
 /// and partner linking state with quick personalization.
@@ -213,35 +214,51 @@ class _CouplesDaysBannerState extends State<CouplesDaysBanner> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final daysTogether = _profile.daysTogether;
     final daysToAnniversary = _profile.daysUntilNextAnniversary;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5E2B97), Color(0xFF8E37D7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x337047D7),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+    return BouncyTap(
+      onTap: _showEditProfileDialog,
+      hapticType: AppHapticType.selection,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? AppColors.midnightAurora
+              : const LinearGradient(
+                  colors: [Color(0xFF5E2B97), Color(0xFF8E37D7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
           borderRadius: BorderRadius.circular(24),
-          onTap: _showEditProfileDialog,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              children: [
+          border: isDark
+              ? Border.all(
+                  color: AppColors.neonPurple.withValues(alpha: 0.35),
+                  width: 1.5,
+                )
+              : null,
+          boxShadow: isDark
+              ? [
+                  ...AppShadows.glow(AppColors.neonPurple, blur: 22, alpha: 0.2),
+                  const BoxShadow(
+                    color: Color(0x66000000),
+                    blurRadius: 16,
+                    offset: Offset(0, 8),
+                  ),
+                ]
+              : const [
+                  BoxShadow(
+                    color: Color(0x337047D7),
+                    blurRadius: 18,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            children: [
                 // Header: Names & Edit Icon
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -356,7 +373,6 @@ class _CouplesDaysBannerState extends State<CouplesDaysBanner> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

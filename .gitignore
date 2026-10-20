@@ -15,3 +15,5 @@ ios/Flutter/flutter_export_environment.sh
 *.aab
 *.iml
 Antigravity_Universal_Project_Kit/
+__pycache__/
+*.pyc

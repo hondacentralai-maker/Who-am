@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/decision_wheel_item.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/celebration_overlay.dart';
 
 class DecisionWheelScreen extends StatefulWidget {
   const DecisionWheelScreen({super.key});
@@ -90,6 +91,9 @@ class _DecisionWheelScreenState extends State<DecisionWheelScreen>
         _isSpinning = false;
       });
       PreferencesService.triggerHaptic(AppHapticType.medium);
+      if (mounted) {
+        CelebrationOverlay.show(context);
+      }
       _showWinnerDialog(winningSector);
     });
   }

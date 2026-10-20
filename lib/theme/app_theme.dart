@@ -15,6 +15,16 @@ class AppColors {
   static const accentPink = Color(0xFFD94FA0);
   static const accentGold = Color(0xFFF5C842);
 
+  // Midnight Romance Luxury Dark Mode Tokens
+  static const midnightSurface = Color(0xFF0D0A1A);
+  static const midnightCard = Color(0xFF17122A);
+  static const midnightCardBorder = Color(0xFF2E2452);
+  static const midnightText = Color(0xFFF1EEFF);
+  static const midnightMuted = Color(0xFFA197C7);
+  static const neonPurple = Color(0xFF9D65FF);
+  static const neonPink = Color(0xFFFF52A8);
+  static const neonGold = Color(0xFFFFD15C);
+
   // Text
   static const ink = Color(0xFF25213A);
   static const muted = Color(0xFF77728C);
@@ -29,6 +39,18 @@ class AppColors {
   // Gradients
   static const primaryGradient = LinearGradient(
     colors: [deepPurple, purple],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const auroraGradient = LinearGradient(
+    colors: [Color(0xFF45218D), Color(0xFF7047D7), Color(0xFFD94FA0)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const midnightAurora = LinearGradient(
+    colors: [Color(0xFF1B0F38), Color(0xFF2C1656), Color(0xFF4A1852)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -73,6 +95,20 @@ class AppShadows {
       offset: Offset(0, 14),
     ),
   ];
+
+  static List<BoxShadow> glow(
+    Color color, {
+    double blur = 20,
+    double alpha = 0.28,
+    Offset offset = const Offset(0, 8),
+  }) =>
+      [
+        BoxShadow(
+          color: color.withValues(alpha: alpha),
+          blurRadius: blur,
+          offset: offset,
+        ),
+      ];
 }
 
 // ─── Border Radii ───────────────────────────────────────
@@ -134,6 +170,44 @@ class AppDecorations {
         border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
         boxShadow: AppShadows.cardShadow,
       );
+
+  static BoxDecoration frostedGlass({
+    required BuildContext context,
+    double radius = AppRadius.large,
+    Color? accentColor,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BoxDecoration(
+      color: isDark
+          ? const Color(0xCC17122A)
+          : Colors.white.withValues(alpha: 0.88),
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(
+        color: accentColor != null
+            ? accentColor.withValues(alpha: isDark ? 0.4 : 0.25)
+            : (isDark
+                ? AppColors.midnightCardBorder
+                : Colors.white.withValues(alpha: 0.6)),
+        width: 1.5,
+      ),
+      boxShadow: isDark
+          ? [
+              BoxShadow(
+                color: (accentColor ?? AppColors.neonPurple)
+                    .withValues(alpha: 0.14),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ]
+          : [
+              BoxShadow(
+                color: (accentColor ?? AppColors.purple).withValues(alpha: 0.10),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+    );
+  }
 
   static BoxDecoration paleBox({double radius = AppRadius.medium}) =>
       BoxDecoration(
@@ -243,13 +317,14 @@ class AppTheme {
         useMaterial3: true,
         brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.purple,
+          seedColor: AppColors.neonPurple,
           brightness: Brightness.dark,
         ),
-        scaffoldBackgroundColor: const Color(0xFF141024),
+        scaffoldBackgroundColor: AppColors.midnightSurface,
+        cardColor: AppColors.midnightCard,
         fontFamily: 'Cairo',
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF141024),
+          backgroundColor: AppColors.midnightSurface,
           foregroundColor: Colors.white,
           centerTitle: true,
           elevation: 0,
@@ -263,7 +338,7 @@ class AppTheme {
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.purple,
+            backgroundColor: AppColors.neonPurple,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             shape: RoundedRectangleBorder(
@@ -280,7 +355,7 @@ class AppTheme {
           style: OutlinedButton.styleFrom(
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            side: const BorderSide(color: AppColors.purple, width: 1.5),
+            side: const BorderSide(color: AppColors.neonPurple, width: 1.5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.medium),
             ),
@@ -293,10 +368,10 @@ class AppTheme {
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          color: const Color(0xFF1E1838),
+          color: AppColors.midnightCard,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.card),
-            side: const BorderSide(color: Color(0xFF332A54)),
+            side: const BorderSide(color: AppColors.midnightCardBorder),
           ),
         ),
       );

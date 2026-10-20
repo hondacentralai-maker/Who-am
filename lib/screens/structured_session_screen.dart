@@ -3,6 +3,7 @@ import '../models/game_session.dart';
 import '../services/game_data_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/celebration_overlay.dart';
 
 class StructuredSessionScreen extends StatefulWidget {
   const StructuredSessionScreen({super.key});
@@ -40,6 +41,9 @@ class _StructuredSessionScreenState extends State<StructuredSessionScreen> {
       _session!.next();
       if (_session!.isCompleted) {
         PreferencesService.recordGamePlay();
+        if (mounted) {
+          CelebrationOverlay.show(context);
+        }
       }
     });
   }
