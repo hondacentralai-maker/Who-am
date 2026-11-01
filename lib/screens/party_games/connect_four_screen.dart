@@ -16,6 +16,8 @@ enum ConnectPlayer { none, red, yellow }
 
 enum ConnectGameMode { pvp, vsAi }
 
+enum AiDifficulty { easy, medium, hard }
+
 class ConnectFourScreen extends StatefulWidget {
   final List<String>? initialPlayers;
 
@@ -38,10 +40,13 @@ class _ConnectFourScreenState extends State<ConnectFourScreen>
   late List<List<ConnectPlayer>> _grid;
   ConnectPlayer _currentPlayer = ConnectPlayer.red;
   ConnectGameMode _mode = ConnectGameMode.pvp;
+  AiDifficulty _aiDifficulty = AiDifficulty.hard;
   bool _isAiThinking = false;
   ConnectPlayer? _winner;
   List<GridPoint> _winningLine = [];
   bool _isDraw = false;
+
+  final List<GridPoint> _moveHistory = [];
 
   int _redWins = 0;
   int _yellowWins = 0;
@@ -106,7 +111,36 @@ class _ConnectFourScreenState extends State<ConnectFourScreen>
       _droppingCol = null;
       _targetRow = null;
       _droppingPlayer = null;
+      _moveHistory.clear();
     });
+  }
+
+  void _undoMove() {
+    if (_moveHistory.isEmpty || _isAiThinking || _dropAnimController.isAnimating) return;
+    setState(() {
+      if (_mode == ConnectGameMode.vsAi) {
+        if (_moveHistory.isNotEmpty) {
+          final last = _moveHistory.removeLast();
+          _grid[last.r][last.c] = ConnectPlayer.none;
+        }
+        if (_moveHistory.isNotEmpty) {
+          final last = _moveHistory.removeLast();
+          _grid[last.r][last.c] = ConnectPlayer.none;
+        }
+        _currentPlayer = ConnectPlayer.red;
+      } else {
+        final last = _moveHistory.removeLast();
+        _grid[last.r][last.c] = ConnectPlayer.none;
+        _currentPlayer = (_currentPlayer == ConnectPlayer.red)
+            ? ConnectPlayer.yellow
+            : ConnectPlayer.red;
+      }
+      _winner = null;
+      _winningLine = [];
+      _isDraw = false;
+    });
+    _audio.playCardSwipe();
+    PreferencesService.triggerHaptic(AppHapticType.selection);
   }
 
   bool _canDrop(int col) {
@@ -146,6 +180,7 @@ class _ConnectFourScreenState extends State<ConnectFourScreen>
 
     setState(() {
       _grid[targetRow][col] = player;
+      _moveHistory.add(GridPoint(targetRow, col));
       _droppingCol = null;
       _targetRow = null;
       _droppingPlayer = null;
@@ -212,34 +247,39 @@ class _ConnectFourScreenState extends State<ConnectFourScreen>
   }
 
   int _computeBestAiMove() {
+    final validCols = [0, 1, 2, 3, 4, 5, 6].where((c) => _findLowestEmptyRow(c) != -1).toList();
+    if (validCols.isEmpty) return 0;
+
+    // Easy AI: 45% random move for friendly casual fun
+    if (_aiDifficulty == AiDifficulty.easy && math.Random().nextDouble() < 0.45) {
+      return validCols[math.Random().nextInt(validCols.length)];
+    }
+
     // 1. Check if AI can win immediately
-    for (int c = 0; c < cols; c++) {
+    for (int c in validCols) {
       final r = _findLowestEmptyRow(c);
-      if (r != -1) {
-        _grid[r][c] = ConnectPlayer.yellow;
-        final win = _checkWinner(r, c, ConnectPlayer.yellow);
-        _grid[r][c] = ConnectPlayer.none;
-        if (win != null) return c;
-      }
+      _grid[r][c] = ConnectPlayer.yellow;
+      final win = _checkWinner(r, c, ConnectPlayer.yellow);
+      _grid[r][c] = ConnectPlayer.none;
+      if (win != null) return c;
     }
 
     // 2. Block human opponent from winning immediately
-    for (int c = 0; c < cols; c++) {
+    for (int c in validCols) {
       final r = _findLowestEmptyRow(c);
-      if (r != -1) {
-        _grid[r][c] = ConnectPlayer.red;
-        final win = _checkWinner(r, c, ConnectPlayer.red);
-        _grid[r][c] = ConnectPlayer.none;
-        if (win != null) return c;
-      }
+      _grid[r][c] = ConnectPlayer.red;
+      final win = _checkWinner(r, c, ConnectPlayer.red);
+      _grid[r][c] = ConnectPlayer.none;
+      if (win != null) return c;
     }
 
-    // 3. Prefer center column (cols 3, 2, 4, 1, 5, 0, 6)
+    // If Medium, return best prioritized column
     const priority = [3, 2, 4, 1, 5, 0, 6];
-    final validCols = priority.where((c) => _findLowestEmptyRow(c) != -1).toList();
+    final prioritizedValid = priority.where((c) => validCols.contains(c)).toList();
 
-    // 4. Avoid moves that give opponent immediate win above
-    for (final c in validCols) {
+    // 3. Hard AI: Avoid moves that give opponent immediate win on top
+    final safeCols = <int>[];
+    for (final c in prioritizedValid) {
       final r = _findLowestEmptyRow(c);
       if (r > 0) {
         _grid[r][c] = ConnectPlayer.yellow;
@@ -248,14 +288,18 @@ class _ConnectFourScreenState extends State<ConnectFourScreen>
         _grid[r - 1][c] = ConnectPlayer.none;
         _grid[r][c] = ConnectPlayer.none;
         if (oppWin == null) {
-          return c;
+          safeCols.add(c);
         }
       } else {
-        return c;
+        safeCols.add(c);
       }
     }
 
-    return validCols.isNotEmpty ? validCols.first : 0;
+    if (safeCols.isNotEmpty) {
+      return safeCols.first;
+    }
+
+    return prioritizedValid.first;
   }
 
   List<GridPoint>? _checkWinner(int r, int c, ConnectPlayer p) {
@@ -335,9 +379,10 @@ class _ConnectFourScreenState extends State<ConnectFourScreen>
             child: Column(
               children: [
                 _buildScoreHeader(isDark),
-                const SizedBox(height: 8),
+                if (_mode == ConnectGameMode.vsAi) _buildAiDifficultyBar(isDark),
+                const SizedBox(height: 6),
                 _buildTurnIndicator(isDark),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Expanded(
                   child: Center(
                     child: Padding(
@@ -737,6 +782,47 @@ class _ConnectFourScreenState extends State<ConnectFourScreen>
     );
   }
 
+  Widget _buildAiDifficultyBar(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('مستوى الذكاء: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(width: 8),
+          _buildDifficultyChip('سهل 🐣', AiDifficulty.easy),
+          const SizedBox(width: 6),
+          _buildDifficultyChip('متوازن ⚖️', AiDifficulty.medium),
+          const SizedBox(width: 6),
+          _buildDifficultyChip('داهية 🧠', AiDifficulty.hard),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDifficultyChip(String label, AiDifficulty diff) {
+    final isSelected = _aiDifficulty == diff;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (val) {
+        if (val) {
+          setState(() {
+            _aiDifficulty = diff;
+            _resetBoard();
+          });
+        }
+      },
+      selectedColor: const Color(0xFF1565C0).withValues(alpha: 0.25),
+      labelStyle: TextStyle(
+        fontSize: 11,
+        fontWeight: isSelected ? FontWeight.bold : null,
+        color: isSelected ? const Color(0xFF1565C0) : null,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+    );
+  }
+
   Widget _buildBottomControls(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -755,7 +841,13 @@ class _ConnectFourScreenState extends State<ConnectFourScreen>
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
+          IconButton.filledTonal(
+            onPressed: _moveHistory.isNotEmpty && !_isAiThinking ? _undoMove : null,
+            icon: const Icon(Icons.undo_rounded),
+            tooltip: 'تراجع عن الحركة',
+          ),
+          const SizedBox(width: 8),
           IconButton.filledTonal(
             onPressed: () {
               showModalBottomSheet<void>(

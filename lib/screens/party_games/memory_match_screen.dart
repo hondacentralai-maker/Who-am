@@ -40,6 +40,8 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
 
   MemoryGameMode _mode = MemoryGameMode.solo;
   String _selectedTheme = 'محبة وذكريات';
+  int _cardCount = 16; // 12, 16, 20
+  bool _isNewRecord = false;
 
   late List<_MemoryCardItem> _cards;
   int? _firstFlippedIndex;
@@ -69,6 +71,8 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
       {'symbol': '🕯️', 'label': 'شمعة'},
       {'symbol': '✈️', 'label': 'سفر'},
       {'symbol': '💖', 'label': 'قلب'},
+      {'symbol': '🏖️', 'label': 'بحر'},
+      {'symbol': '🎵', 'label': 'نغم'},
     ],
     'ضحك ومرح الشلة': [
       {'symbol': '🍿', 'label': 'فشار'},
@@ -79,6 +83,20 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
       {'symbol': '🚀', 'label': 'صاروخ'},
       {'symbol': '👑', 'label': 'الملك'},
       {'symbol': '⭐', 'label': 'نجم'},
+      {'symbol': '🎸', 'label': 'عزف'},
+      {'symbol': '🎈', 'label': 'بالون'},
+    ],
+    'أكلات عربية 🍲': [
+      {'symbol': '🍲', 'label': 'كبسة'},
+      {'symbol': '🌯', 'label': 'شاورما'},
+      {'symbol': '🧆', 'label': 'فلافل'},
+      {'symbol': '🥧', 'label': 'كنافة'},
+      {'symbol': '☕', 'label': 'قهوة عربي'},
+      {'symbol': '🌴', 'label': 'تمر'},
+      {'symbol': '🍵', 'label': 'شاي نعناع'},
+      {'symbol': '🥟', 'label': 'سمبوسة'},
+      {'symbol': '🍯', 'label': 'بقلاوة'},
+      {'symbol': '🍉', 'label': 'بطيخ'},
     ],
   };
 
@@ -128,7 +146,9 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
     _secondFlippedIndex = null;
     _isProcessing = false;
 
-    final baseItems = _themes[_selectedTheme] ?? _themes['محبة وذكريات']!;
+    final pairsCount = _cardCount ~/ 2;
+    final allThemeItems = _themes[_selectedTheme] ?? _themes['محبة وذكريات']!;
+    final baseItems = allThemeItems.take(pairsCount).toList();
     final cardPairs = <_MemoryCardItem>[];
 
     for (int i = 0; i < baseItems.length; i++) {
@@ -206,12 +226,22 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
         // Check if all matched
         if (_cards.every((c) => c.isMatched)) {
           _timer?.cancel();
-          setState(() {
-            _isGameCompleted = true;
-          });
-          _audio.playVictory();
-          PreferencesService.triggerHaptic(AppHapticType.heavy);
-          CelebrationOverlay.show(context);
+          bool isRecord = false;
+          if (_mode == MemoryGameMode.solo) {
+            isRecord = await PreferencesService.saveMemoryBestMoves(
+              '${_selectedTheme}_$_cardCount',
+              _movesCount,
+            );
+          }
+          if (mounted) {
+            setState(() {
+              _isGameCompleted = true;
+              _isNewRecord = isRecord;
+            });
+            _audio.playVictory();
+            PreferencesService.triggerHaptic(AppHapticType.heavy);
+            CelebrationOverlay.show(context);
+          }
         }
       } else {
         // NO MATCH -> Flip back
@@ -309,13 +339,15 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF7E57C2), Color(0xFFE91E63)],
+                  gradient: LinearGradient(
+                    colors: _isNewRecord
+                        ? const [Color(0xFFFF8F00), Color(0xFFFF3D00)]
+                        : const [Color(0xFF7E57C2), Color(0xFFE91E63)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.purple.withValues(alpha: 0.4),
+                      color: (_isNewRecord ? Colors.amber : Colors.purple).withValues(alpha: 0.4),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -323,7 +355,9 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
                 ),
                 child: Text(
                   _mode == MemoryGameMode.solo
-                      ? 'رائع! أكملت المطابقة في $_movesCount حركة خلال ${_formatTime(_secondsElapsed)}! 🌟🏆'
+                      ? (_isNewRecord
+                          ? '🔥 رقم قياسي جديد! أكملت المطابقة في $_movesCount حركة خلال ${_formatTime(_secondsElapsed)}! 🏆'
+                          : 'رائع! أكملت المطابقة في $_movesCount حركة خلال ${_formatTime(_secondsElapsed)}! 🌟')
                       : (_player1Score > _player2Score
                           ? 'مبروك! فاز $_p1Name بـ $_player1Score نقاط! 🏆🎉'
                           : (_player2Score > _player1Score
@@ -344,6 +378,8 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
   }
 
   Widget _buildStatsHeader(bool isDark) {
+    final bestRecord = PreferencesService.getMemoryBestMoves('${_selectedTheme}_$_cardCount');
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -365,9 +401,15 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
                 _buildStatPill(Icons.timer_outlined, 'الوقت', _formatTime(_secondsElapsed), Colors.orange),
                 _buildStatPill(Icons.touch_app_outlined, 'الحركات', '$_movesCount', Colors.purple),
                 _buildStatPill(
+                  Icons.emoji_events_outlined,
+                  'الأفضل',
+                  bestRecord == 999 ? '—' : '$bestRecord',
+                  Colors.amber,
+                ),
+                _buildStatPill(
                   Icons.check_circle_outline,
                   'المطابقة',
-                  '${_cards.where((c) => c.isMatched).length ~/ 2} / ${_cards.length ~/ 2}',
+                  '${_cards.where((c) => c.isMatched).length ~/ 2}/${_cards.length ~/ 2}',
                   Colors.green,
                 ),
               ],
@@ -435,34 +477,77 @@ class _MemoryMatchScreenState extends State<MemoryMatchScreen> {
   }
 
   Widget _buildThemeSelector(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: _themes.keys.map((themeName) {
-          final isSelected = _selectedTheme == themeName;
-          return Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: ChoiceChip(
-              label: Text(themeName),
-              selected: isSelected,
-              onSelected: (val) {
-                if (val && _selectedTheme != themeName) {
-                  setState(() {
-                    _selectedTheme = themeName;
-                    _startNewGame();
-                  });
-                }
-              },
-              selectedColor: AppColors.purple.withValues(alpha: 0.2),
-              labelStyle: TextStyle(
-                color: isSelected ? AppColors.deepPurple : null,
-                fontWeight: isSelected ? FontWeight.bold : null,
-                fontSize: 12,
+    return Column(
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: _themes.keys.map((themeName) {
+              final isSelected = _selectedTheme == themeName;
+              return Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: ChoiceChip(
+                  label: Text(themeName),
+                  selected: isSelected,
+                  onSelected: (val) {
+                    if (val && _selectedTheme != themeName) {
+                      setState(() {
+                        _selectedTheme = themeName;
+                        _startNewGame();
+                      });
+                    }
+                  },
+                  selectedColor: AppColors.purple.withValues(alpha: 0.2),
+                  labelStyle: TextStyle(
+                    color: isSelected ? AppColors.deepPurple : null,
+                    fontWeight: isSelected ? FontWeight.bold : null,
+                    fontSize: 12,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 4),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: [
+              const Text(
+                'الشبكة: ',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
               ),
-            ),
-          );
-        }).toList(),
-      ),
+              const SizedBox(width: 4),
+              for (final count in [12, 16, 20])
+                Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: ChoiceChip(
+                    label: Text('$count كرت'),
+                    selected: _cardCount == count,
+                    onSelected: (val) {
+                      if (val && _cardCount != count) {
+                        setState(() {
+                          _cardCount = count;
+                          _startNewGame();
+                        });
+                      }
+                    },
+                    selectedColor: AppColors.accentGold.withValues(alpha: 0.25),
+                    labelStyle: TextStyle(
+                      fontSize: 11,
+                      fontWeight: _cardCount == count ? FontWeight.bold : FontWeight.normal,
+                      color: _cardCount == count ? Colors.orange.shade800 : null,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

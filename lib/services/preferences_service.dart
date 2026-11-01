@@ -270,6 +270,86 @@ class PreferencesService {
   static Future<void> recordPartyGamePlayed([String? gameId]) =>
       recordPartyGameFinished();
 
+  // ─── Memory Match Best Scores ────────────────────────
+  static int getMemoryBestMoves(String themeKey) {
+    try {
+      return _p.getInt('memory_best_moves_$themeKey') ?? 999;
+    } catch (_) {
+      return 999;
+    }
+  }
+
+  static Future<bool> saveMemoryBestMoves(String themeKey, int moves) async {
+    try {
+      final prev = getMemoryBestMoves(themeKey);
+      if (moves < prev) {
+        await _p.setInt('memory_best_moves_$themeKey', moves);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  // ─── Wordle Stats ─────────────────────────────────────
+  static int getWordlePlayed() {
+    try {
+      return _p.getInt('wordle_played') ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  static int getWordleWins() {
+    try {
+      return _p.getInt('wordle_wins') ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  static int getWordleCurrentStreak() {
+    try {
+      return _p.getInt('wordle_current_streak') ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  static int getWordleMaxStreak() {
+    try {
+      return _p.getInt('wordle_max_streak') ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  static int getWordleGuessCount(int attempt) {
+    try {
+      return _p.getInt('wordle_guess_$attempt') ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  static Future<void> recordWordleResult({required bool won, required int attempts}) async {
+    try {
+      final played = getWordlePlayed() + 1;
+      await _p.setInt('wordle_played', played);
+      if (won) {
+        final wins = getWordleWins() + 1;
+        final streak = getWordleCurrentStreak() + 1;
+        final maxStreak = streak > getWordleMaxStreak() ? streak : getWordleMaxStreak();
+        await _p.setInt('wordle_wins', wins);
+        await _p.setInt('wordle_current_streak', streak);
+        await _p.setInt('wordle_max_streak', maxStreak);
+        final count = getWordleGuessCount(attempts) + 1;
+        await _p.setInt('wordle_guess_$attempts', count);
+      } else {
+        await _p.setInt('wordle_current_streak', 0);
+      }
+    } catch (_) {}
+  }
+
   // ─── Achievements ──────────────────────────────────
   static const _achievementsKey = 'player_achievements_v1';
 

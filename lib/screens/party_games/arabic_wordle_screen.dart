@@ -69,6 +69,7 @@ class _ArabicWordleScreenState extends State<ArabicWordleScreen> {
   @override
   void initState() {
     super.initState();
+    _winsStreak = PreferencesService.getWordleCurrentStreak();
     _startNewGame();
     PreferencesService.recordPartyGamePlayed('arabic_wordle');
   }
@@ -189,10 +190,12 @@ class _ArabicWordleScreenState extends State<ArabicWordleScreen> {
 
     if (guess == target) {
       // VICTORY!
+      final attemptsUsed = _currentAttempt + 1;
+      PreferencesService.recordWordleResult(won: true, attempts: attemptsUsed);
       setState(() {
         _isGameOver = true;
         _isVictory = true;
-        _winsStreak++;
+        _winsStreak = PreferencesService.getWordleCurrentStreak();
       });
       _audio.playVictory();
       PreferencesService.triggerHaptic(AppHapticType.heavy);
@@ -200,6 +203,7 @@ class _ArabicWordleScreenState extends State<ArabicWordleScreen> {
     } else {
       if (_currentAttempt + 1 >= maxAttempts) {
         // GAME OVER
+        PreferencesService.recordWordleResult(won: false, attempts: maxAttempts);
         setState(() {
           _isGameOver = true;
           _isVictory = false;
@@ -218,6 +222,127 @@ class _ArabicWordleScreenState extends State<ArabicWordleScreen> {
     }
   }
 
+  void _showStatsDialog() {
+    final played = PreferencesService.getWordlePlayed();
+    final wins = PreferencesService.getWordleWins();
+    final currentStreak = PreferencesService.getWordleCurrentStreak();
+    final maxStreak = PreferencesService.getWordleMaxStreak();
+    final winPercent = played > 0 ? ((wins / played) * 100).round() : 0;
+
+    int maxCount = 1;
+    final guessCounts = <int, int>{};
+    for (int i = 1; i <= maxAttempts; i++) {
+      final count = PreferencesService.getWordleGuessCount(i);
+      guessCounts[i] = count;
+      if (count > maxCount) maxCount = count;
+    }
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.leaderboard_rounded, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('إحصائيات الكلمات 📊', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildStatCol('$played', 'اللعب'),
+                    _buildStatCol('$winPercent%', 'الفوز'),
+                    _buildStatCol('$currentStreak', 'السلسلة'),
+                    _buildStatCol('$maxStreak', 'أطول سلسلة'),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    'توزيع المحاولات الناجحة 🎯',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                for (int i = 1; i <= maxAttempts; i++) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        Text('$i', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Container(
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF2C3440) : const Color(0xFFE0E0E0),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              FractionallySizedBox(
+                                widthFactor: (guessCounts[i]! / maxCount).clamp(0.08, 1.0),
+                                child: Container(
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: (i == _currentAttempt + 1 && _isVictory)
+                                        ? const Color(0xFF2E7D32)
+                                        : const Color(0xFF5E35B1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: Text(
+                                    '${guessCounts[i]}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إغلاق', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStatCol(String value, String label) {
+    return Column(
+      children: [
+        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 2),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -231,6 +356,11 @@ class _ArabicWordleScreenState extends State<ArabicWordleScreen> {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.bar_chart_rounded),
+            tooltip: 'الإحصائيات',
+            onPressed: _showStatsDialog,
+          ),
           IconButton(
             icon: const Icon(Icons.lightbulb_outline_rounded),
             tooltip: 'تلميح',
