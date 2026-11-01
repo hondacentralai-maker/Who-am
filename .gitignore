@@ -15,6 +15,7 @@ ios/Flutter/flutter_export_environment.sh
 *.aab
 *.iml
 skills/
+leya.txt
 Antigravity_Universal_Project_Kit/
 __pycache__/
 *.pyc
