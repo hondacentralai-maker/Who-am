@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>من أنا؟ • لعبة الأزواج وحفلات الجمعات 3D</title>
+  <meta name="description" content="التطبيق العربي الأقوى للأزواج وحفلات الجمعات التنافسية مع محرك جاكارو 3D الواقعي و10 ألعاب جماعية مميزة.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0F0F1A;
+      --card-bg: rgba(26, 26, 46, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-gold: #FFD700;
+      --accent-purple: #9D4EDD;
+      --accent-rose: #E91E63;
+      --text-main: #FFFFFF;
+      --text-muted: #A0A0C0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Tajawal', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      overflow-x: hidden;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(157, 78, 221, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(233, 30, 99, 0.12) 0%, transparent 45%);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    header {
+      padding: 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-rose));
+      color: white;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--accent-gold);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 215, 0, 0.1);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      padding: 8px 18px;
+      border-radius: 30px;
+      color: var(--accent-gold);
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #FFFFFF 30%, #E0AAFF 70%, #FFD700 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 20px;
+      color: var(--text-muted);
+      max-width: 720px;
+      margin: 0 auto 36px;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      color: #000;
+      padding: 16px 36px;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 10px 30px rgba(255, 215, 0, 0.25);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 36px rgba(255, 215, 0, 0.35);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: white;
+      padding: 16px 32px;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 700;
+      text-decoration: none;
+      backdrop-filter: blur(10px);
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--accent-purple);
+    }
+
+    /* Features Grid */
+    .section-title {
+      text-align: center;
+      margin: 80px 0 40px;
+    }
+
+    .section-title h2 {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .section-title p {
+      color: var(--text-muted);
+      font-size: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 30px;
+      backdrop-filter: blur(12px);
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(255, 215, 0, 0.4);
+    }
+
+    .card-icon {
+      font-size: 40px;
+      margin-bottom: 18px;
+      display: inline-block;
+    }
+
+    .card h3 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #FFF;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* Games Showcase */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 80px;
+    }
+
+    .game-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .game-item:hover {
+      background: rgba(157, 78, 221, 0.12);
+      border-color: var(--accent-purple);
+      transform: scale(1.03);
+    }
+
+    .game-item .emoji {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .game-item h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFF;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--card-border);
+      padding: 40px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    footer a {
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 38px; }
+      .hero p { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <a href="#" class="logo">
+        <span>من أنا؟</span>
+        <span class="logo-badge">3D Realtime</span>
+      </a>
+      <a href="https://github.com/hondacentralai-maker/Who-am" class="nav-btn" target="_blank">
+        ⭐ المستودع على GitHub
+      </a>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-pill">✨ التحديث الجديد: محرك 3D وفيزياء حقيقية</div>
+      <h1>عالم الألعاب التفاعلية<br>للأزواج وحفلات الجمعات</h1>
+      <p>
+        عيشوا أجمل اللحظات مع لعبة جاكارو 3D الواقعية، وأكثر من 10 ألعاب جماعية تنافسية مع غرف لعب أونلاين مشفرة عبر Supabase.
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/hondacentralai-maker/Who-am/releases" class="btn-primary" target="_blank">
+          <span>📲 تحميل APK للأندرويد</span>
+        </a>
+        <a href="https://github.com/hondacentralai-maker/Who-am" class="btn-secondary" target="_blank">
+          <span>🎮 تصفح الكود المصدري</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Main 3D Showcase -->
+    <div class="section-title">
+      <h2>أبرز مميزات الإصدار الجديد</h2>
+      <p>تقنيات ألعاب حديثة تعتمد على الاستجابة اللمسية والصوت الفوري</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🎲</div>
+        <h3>جاكارو 3D الواقعية</h3>
+        <p>محرك ثلاثي الأبعاد هجين مع توزيع البطاقات المنحنية، والتفاعلات الحية وزوايا الكاميرا التفاعلية.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🚨</div>
+        <h3>أزرار الأركيد الفيزيائية</h3>
+        <p>زر أركيد ثلاثي الأبعاد ميكانيكي مع اهتزاز لمسي واقعي وصوت تخليقي فوري فائق السرعة.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <h3>غرف أونلاين فائقة السرعة</h3>
+        <p>بث مباشر لحظي عبر قنوات Supabase Realtime مع حماية كاملة على مستوى الصفوف (RLS).</p>
+      </div>
+    </div>
+
+    <!-- Games Suite -->
+    <div class="section-title">
+      <h2>باقة ألعاب الحفلات المدمجة</h2>
+      <p>10 ألعاب متنوعة تناسب الجلسات الزوجية وتحديات الأصدقاء والعائلة</p>
+    </div>
+
+    <div class="games-grid">
+      <div class="game-item">
+        <div class="emoji">🚌</div>
+        <h4>أوتوبيس كومبليت</h4>
+      </div>
+      <div class="game-item">
+        <div class="emoji">🎭</div>
+        <h4>مين فينا؟</h4>
+      </div>
+      <div class="game-item">
+        <div class="emoji">⏱️</div>
+        <h4>تحدي الـ 5 ثواني</h4>
+      </div>
+      <div class="game-item">
+        <div class="emoji">🕵️</div>
+        <h4>الجاسوس (سباي فول)</h4>
+      </div>
+      <div class="game-item">
+        <div class="emoji">🚫</div>
+        <h4>تابو (الكلمات الممنوعة)</h4>
+      </div>
+      <div class="game-item">
+        <div class="emoji">⚖️</div>
+        <h4>لو خيروك</h4>
+      </div>
+      <div class="game-item">
+        <div class="emoji">🔥</div>
+        <h4>بصراحة وولعة</h4>
+      </div>
+      <div class="game-item">
+        <div class="emoji">🍾</div>
+        <h4>تدوير الزجاجة 3D</h4>
+      </div>
+      <div class="game-item">
+        <div class="emoji">☕</div>
+        <h4>حكايات زمان</h4>
+      </div>
+      <div class="game-item">
+        <div class="emoji">⚽</div>
+        <h4>هاتريك كروي</h4>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>مشروع تطبيق «من أنا؟» • مستضاف ومدار عبر شبكة Cloudflare العالمية & Supabase Realtime</p>
+      <p style="margin-top: 8px;">مفتوح المصدر على <a href="https://github.com/hondacentralai-maker/Who-am" target="_blank">GitHub</a></p>
+    </footer>
+  </div>
+
+</body>
+</html>
