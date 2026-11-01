@@ -166,6 +166,12 @@ class GameAudioService {
     } catch (_) {}
   }
 
+  Future<void> playVictory() => playWin();
+  Future<void> playCardSwipe() => playCardDeal();
+  Future<void> playDiceDrop() => playCardPlace();
+  Future<void> playPlace() => playCardPlace();
+  Future<void> playMatchSuccess() => playSuccess();
+
   // ════════════════════════════════════════════════════════════════════════════
   //  توليد موجات الصوت الرقمية PCM WAV 16-Bit في الذاكرة
   // ════════════════════════════════════════════════════════════════════════════

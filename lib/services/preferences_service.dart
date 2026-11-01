@@ -267,6 +267,9 @@ class PreferencesService {
     if (streakDays >= 3) await unlockAchievement('streak_3');
   }
 
+  static Future<void> recordPartyGamePlayed([String? gameId]) =>
+      recordPartyGameFinished();
+
   // ─── Achievements ──────────────────────────────────
   static const _achievementsKey = 'player_achievements_v1';
 

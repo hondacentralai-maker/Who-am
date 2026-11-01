@@ -18,6 +18,9 @@ import 'party_games/girls_lakin_screen.dart';
 import 'party_games/hatrick_screen.dart';
 import 'party_games/bottle_spin_screen.dart';
 import 'party_games/jackaroo_3d_screen.dart';
+import 'party_games/connect_four_screen.dart';
+import 'party_games/memory_match_screen.dart';
+import 'party_games/arabic_wordle_screen.dart';
 
 class _PartyGameDef {
   final String id;
@@ -207,6 +210,39 @@ class _PartyGamesHubScreenState extends State<PartyGamesHubScreen> {
       borderColor: const Color(0xFF673AB7),
       categories: const ['2 لاعبين', 'تكتيك وذكاء'],
       builder: (ctx, players) => Jackaroo3DScreen(initialPlayers: players),
+    ),
+    _PartyGameDef(
+      id: 'connect_four',
+      title: 'أربعة في صف (Connect 4) 🔴🟡',
+      subtitle: 'التحدي الكلاسيكي لإسقاط الأقراص الملونة وربط 4 على التوالي قبل المنافس أو الذكاء الاصطناعي!',
+      emoji: '🔴',
+      tag: '2 لاعبين • ذكاء وتكتيك واستراتيجية',
+      color: const Color(0xFFE3F2FD),
+      borderColor: const Color(0xFF2196F3),
+      categories: const ['2 لاعبين', 'تكتيك وذكاء'],
+      builder: (ctx, players) => ConnectFourScreen(initialPlayers: players),
+    ),
+    _PartyGameDef(
+      id: 'memory_match',
+      title: 'شطرنج الذاكرة والمطابقة 🎴🧠',
+      subtitle: 'تحدي كروت الذاكرة المقلوبة ثلاثية الأبعاد لاكتشاف الأزواج المتطابقة للأزواج والشلة!',
+      emoji: '🎴',
+      tag: '1 - 2 لاعبين • قوة ملاحظة وسرعة بديهة',
+      color: const Color(0xFFF3E5F5),
+      borderColor: const Color(0xFFAB47BC),
+      categories: const ['2 لاعبين', 'سرعة وضحك'],
+      builder: (ctx, players) => MemoryMatchScreen(initialPlayers: players),
+    ),
+    _PartyGameDef(
+      id: 'arabic_wordle',
+      title: 'فك الكلمة (Arabic Wordle) 🔤',
+      subtitle: 'خمن الكلمة العربية السرية المكونة من 5 حروف في 6 محاولات مع لوحة مفاتيح تفاعلية وتلميحات!',
+      emoji: '🔤',
+      tag: 'فردي وجماعي • ثراء لغوي وتحدي ذهني',
+      color: const Color(0xFFE8F5E9),
+      borderColor: const Color(0xFF43A047),
+      categories: const ['2 لاعبين', 'تكتيك وذكاء'],
+      builder: (ctx, players) => const ArabicWordleScreen(),
     ),
   ];
 

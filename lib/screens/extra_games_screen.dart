@@ -7,6 +7,9 @@ import '../services/game_audio_service.dart';
 import '../widgets/celebration_overlay.dart';
 import '../widgets/interactive_3d_card.dart';
 import 'pass_device_screen.dart';
+import 'party_games/connect_four_screen.dart';
+import 'party_games/memory_match_screen.dart';
+import 'party_games/arabic_wordle_screen.dart';
 
 class ExtraGamesScreen extends StatefulWidget {
   const ExtraGamesScreen({super.key});
@@ -180,6 +183,39 @@ class _ExtraGamesScreenState extends State<ExtraGamesScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => const GuessMyAnswerScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildTile(
+                    icon: Icons.grid_4x4_rounded,
+                    title: 'أربعة في صف (Connect 4) 🔴🟡',
+                    subtitle: 'تحدي الأقراص الملونة وربط 4 على التوالي ضد الشريك أو الروبوت',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ConnectFourScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildTile(
+                    icon: Icons.flip_to_front_rounded,
+                    title: 'شطرنج الذاكرة والمطابقة 🎴🧠',
+                    subtitle: 'تحدي كروت الذاكرة لاكتشاف الأزواج المتطابقة للأزواج والشلة',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MemoryMatchScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildTile(
+                    icon: Icons.spellcheck_rounded,
+                    title: 'فك الكلمة (Arabic Wordle) 🔤',
+                    subtitle: 'تحدي تخمين الكلمة العربية السرية في 6 محاولات مع التلميحات',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ArabicWordleScreen(),
                       ),
                     ),
                   ),

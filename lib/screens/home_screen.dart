@@ -37,6 +37,9 @@ import 'party_games/girls_lakin_screen.dart';
 import 'party_games/hatrick_screen.dart';
 import 'party_games/bottle_spin_screen.dart';
 import 'party_games/jackaroo_3d_screen.dart';
+import 'party_games/connect_four_screen.dart';
+import 'party_games/memory_match_screen.dart';
+import 'party_games/arabic_wordle_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onThemeChanged;
@@ -203,6 +206,15 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case 'jackaroo_3d':
         targetScreen = const Jackaroo3DScreen();
+        break;
+      case 'connect_four':
+        targetScreen = const ConnectFourScreen();
+        break;
+      case 'memory_match':
+        targetScreen = const MemoryMatchScreen();
+        break;
+      case 'arabic_wordle':
+        targetScreen = const ArabicWordleScreen();
         break;
       case 'besaraha_wal3a':
         targetScreen = const BesarahaWal3aScreen();
@@ -1754,6 +1766,52 @@ class _HomeScreenState extends State<HomeScreen> {
             context,
             Perspective3DPageRoute(
               builder: (_) => Jackaroo3DScreen(initialPlayers: players),
+            ),
+          );
+        },
+      ),
+      (
+        icon: Icons.grid_4x4_rounded,
+        color: const Color(0xFF1565C0),
+        title: 'أربعة في صف',
+        badge: 'تحدي 🔴🟡',
+        onTap: () {
+          final profile = PreferencesService.getCouplesProfile();
+          final players = [profile.partner1Name, profile.partner2Name];
+          Navigator.push(
+            context,
+            Perspective3DPageRoute(
+              builder: (_) => ConnectFourScreen(initialPlayers: players),
+            ),
+          );
+        },
+      ),
+      (
+        icon: Icons.flip_to_front_rounded,
+        color: const Color(0xFF8E24AA),
+        title: 'شطرنج الذاكرة',
+        badge: 'مطابقة 🎴',
+        onTap: () {
+          final profile = PreferencesService.getCouplesProfile();
+          final players = [profile.partner1Name, profile.partner2Name];
+          Navigator.push(
+            context,
+            Perspective3DPageRoute(
+              builder: (_) => MemoryMatchScreen(initialPlayers: players),
+            ),
+          );
+        },
+      ),
+      (
+        icon: Icons.spellcheck_rounded,
+        color: const Color(0xFF2E7D32),
+        title: 'فك الكلمة',
+        badge: 'تخمين 🔤',
+        onTap: () {
+          Navigator.push(
+            context,
+            PastelPageRoute(
+              builder: (_) => const ArabicWordleScreen(),
             ),
           );
         },
