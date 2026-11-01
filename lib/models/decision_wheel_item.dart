@@ -166,6 +166,50 @@ class DecisionWheelItem {
         emoji: '🍫',
         colorValue: 0xFF43A047,
       ),
+
+      // 4. Date Night Ideas (اختاروا موعدكم — Pick A Date 🌹)
+      const DecisionWheelItem(
+        id: 'date_1',
+        label: 'عشاء رومانسي على الشموع',
+        category: 'موعد الليلة؟ 🌹',
+        emoji: '🕯️',
+        colorValue: 0xFFE91E63,
+      ),
+      const DecisionWheelItem(
+        id: 'date_2',
+        label: 'تمشية ليلية وآيس كريم',
+        category: 'موعد الليلة؟ 🌹',
+        emoji: '🍦',
+        colorValue: 0xFF00ACC1,
+      ),
+      const DecisionWheelItem(
+        id: 'date_3',
+        label: 'طبخ أكلة جديدة سوا',
+        category: 'موعد الليلة؟ 🌹',
+        emoji: '🍳',
+        colorValue: 0xFFFB8C00,
+      ),
+      const DecisionWheelItem(
+        id: 'date_4',
+        label: 'سهرة بيجامات وأسئلة عميقة',
+        category: 'موعد الليلة؟ 🌹',
+        emoji: '✨',
+        colorValue: 0xFF7047D7,
+      ),
+      const DecisionWheelItem(
+        id: 'date_5',
+        label: 'خروجة مفاجئة بلا تخطيط',
+        category: 'موعد الليلة؟ 🌹',
+        emoji: '🚗',
+        colorValue: 0xFF43A047,
+      ),
+      const DecisionWheelItem(
+        id: 'date_6',
+        label: 'كافيه هادئ وباقة ورد لطيفة',
+        category: 'موعد الليلة؟ 🌹',
+        emoji: '💐',
+        colorValue: 0xFF8E24AA,
+      ),
     ];
   }
 }

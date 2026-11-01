@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/party_game_models.dart';
+import '../../services/game_audio_service.dart';
 import '../../services/preferences_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/interactive_3d_card.dart';
+import '../../widgets/arcade_3d_buzzer.dart';
 
 class WouldYouRatherScreen extends StatefulWidget {
   const WouldYouRatherScreen({super.key});
@@ -27,6 +30,7 @@ class _WouldYouRatherScreenState extends State<WouldYouRatherScreen> {
   void _voteA() {
     if (_isRevealed) return;
     PreferencesService.triggerHaptic(AppHapticType.selection);
+    GameAudioService().playTap();
     setState(() {
       _votesA++;
     });
@@ -35,13 +39,16 @@ class _WouldYouRatherScreenState extends State<WouldYouRatherScreen> {
   void _voteB() {
     if (_isRevealed) return;
     PreferencesService.triggerHaptic(AppHapticType.selection);
+    GameAudioService().playTap();
     setState(() {
       _votesB++;
     });
   }
 
-  void _revealResults() {
+  void _revealResults() async {
     PreferencesService.triggerHaptic(AppHapticType.medium);
+    GameAudioService().playSuccess();
+    await PreferencesService.recordPartyGameFinished(pointsEarned: 10);
     setState(() {
       _isRevealed = true;
     });
@@ -49,6 +56,7 @@ class _WouldYouRatherScreenState extends State<WouldYouRatherScreen> {
 
   void _nextDilemma() {
     PreferencesService.triggerHaptic(AppHapticType.light);
+    GameAudioService().playCardPlace();
     setState(() {
       _currentIndex = (_currentIndex + 1) % _prompts.length;
       _votesA = 0;
@@ -97,6 +105,8 @@ class _WouldYouRatherScreenState extends State<WouldYouRatherScreen> {
               final textA = ctrlA.text.trim();
               final textB = ctrlB.text.trim();
               if (textA.isNotEmpty && textB.isNotEmpty) {
+                PreferencesService.unlockAchievement('custom_creator');
+                GameAudioService().playSuccess();
                 setState(() {
                   _prompts.insert(
                     _currentIndex + 1,
@@ -174,7 +184,10 @@ class _WouldYouRatherScreenState extends State<WouldYouRatherScreen> {
                   children: [
                     // Option A Card
                     Expanded(
-                      child: GestureDetector(
+                      child: Interactive3DCard(
+                        borderRadius: BorderRadius.circular(24),
+                        maxTiltAngle: 0.18,
+                        enableGlare: true,
                         onTap: _voteA,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
@@ -269,7 +282,10 @@ class _WouldYouRatherScreenState extends State<WouldYouRatherScreen> {
 
                     // Option B Card
                     Expanded(
-                      child: GestureDetector(
+                      child: Interactive3DCard(
+                        borderRadius: BorderRadius.circular(24),
+                        maxTiltAngle: 0.18,
+                        enableGlare: true,
                         onTap: _voteB,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
@@ -359,47 +375,22 @@ class _WouldYouRatherScreenState extends State<WouldYouRatherScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  if (!_isRevealed) ...[
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.purple,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          onPressed: totalVotes > 0 ? _revealResults : null,
-                          icon: const Icon(Icons.pie_chart_rounded),
-                          label: const Text(
-                            'كشف نسبة الاتفاق 📊',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                        ),
-                      ),
+              child: !_isRevealed
+                  ? Arcade3DBuzzer(
+                      label: 'كشف نسبة الاتفاق 📊',
+                      icon: Icons.pie_chart_rounded,
+                      color: AppColors.purple,
+                      height: 52,
+                      enabled: totalVotes > 0,
+                      onPressed: totalVotes > 0 ? _revealResults : null,
+                    )
+                  : Arcade3DBuzzer(
+                      label: 'السؤال التالي ➡️',
+                      icon: Icons.arrow_forward_rounded,
+                      color: AppColors.purple,
+                      height: 52,
+                      onPressed: _nextDilemma,
                     ),
-                  ] else ...[
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.purple,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          onPressed: _nextDilemma,
-                          icon: const Icon(Icons.arrow_forward_rounded),
-                          label: const Text(
-                            'السؤال التالي ➡️',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
             ),
           ],
         ),

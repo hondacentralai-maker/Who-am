@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/character.dart';
+import '../services/game_audio_service.dart';
 import '../services/game_data_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/celebration_overlay.dart';
+import '../widgets/interactive_3d_card.dart';
 import 'online_room_screen.dart';
 import 'pass_device_screen.dart';
 
@@ -229,18 +232,22 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
           children: [
             Row(
               children: [
-                ClipRRect(
+                Interactive3DCard(
                   borderRadius: BorderRadius.circular(16),
-                  child: c.image != null
-                      ? Image.asset(
-                          c.image!,
-                          width: 70,
-                          height: 90,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              Text(c.emoji, style: const TextStyle(fontSize: 48)),
-                        )
-                      : Text(c.emoji, style: const TextStyle(fontSize: 48)),
+                  maxTiltAngle: 0.18,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: c.image != null
+                        ? Image.asset(
+                            c.image!,
+                            width: 70,
+                            height: 90,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Text(c.emoji, style: const TextStyle(fontSize: 48)),
+                          )
+                        : Text(c.emoji, style: const TextStyle(fontSize: 48)),
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Column(
@@ -606,12 +613,19 @@ class _GuessGameScreenState extends State<GuessGameScreen> {
   void _makeGuess(Character c) async {
     final target = player == 1 ? widget.secret2 : widget.secret1;
     if (c.id == target.id) {
+      PreferencesService.triggerHaptic(AppHapticType.heavy);
+      GameAudioService().playWin();
       await PreferencesService.recordGameFinished(
         isGuessWin: true,
         pointsEarned: 30,
       );
       setState(() => winner = 'اللاعب $player');
+      if (mounted) {
+        CelebrationOverlay.show(context);
+      }
     } else {
+      PreferencesService.triggerHaptic(AppHapticType.medium);
+      GameAudioService().playBuzzer();
       currentEliminated.add(c.id);
       final nextPlayer = player == 1 ? 2 : 1;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -892,16 +906,29 @@ class _GuessGameScreenState extends State<GuessGameScreen> {
                 onTap: () => _handleCharacterTap(c),
                 borderRadius: BorderRadius.circular(14),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutBack,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.002)
+                    ..rotateX(out ? 0.95 : 0.0),
+                  transformAlignment: Alignment.bottomCenter,
                   decoration: BoxDecoration(
                     color: out ? AppColors.disabledBg : Colors.white,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: out ? Colors.transparent : AppColors.cardBorder,
+                      color: out ? AppColors.muted.withValues(alpha: 0.3) : AppColors.cardBorder,
+                      width: out ? 1 : 1.5,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: out ? 0.08 : 0.16),
+                        blurRadius: out ? 4 : 10,
+                        offset: Offset(0, out ? 2 : 5),
+                      ),
+                    ],
                   ),
                   child: Opacity(
-                    opacity: out ? 0.28 : 1,
+                    opacity: out ? 0.45 : 1,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -921,16 +948,17 @@ class _GuessGameScreenState extends State<GuessGameScreen> {
                         const SizedBox(height: 4),
                         Text(
                           c.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.ink,
+                            color: out ? AppColors.muted : AppColors.ink,
+                            decoration: out ? TextDecoration.lineThrough : null,
                           ),
                         ),
                         if (out)
                           const Text(
                             'مستبعدة ↩',
-                            style: TextStyle(fontSize: 9, color: AppColors.muted),
+                            style: TextStyle(fontSize: 9, color: AppColors.muted, fontWeight: FontWeight.bold),
                           ),
                       ],
                     ),
@@ -1079,32 +1107,50 @@ class _GuessGameScreenState extends State<GuessGameScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 140,
-                  height: 140,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.palePurple,
-                  ),
-                ),
-                if (target.image != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      target.image!,
-                      width: 90,
-                      height: 115,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          Text(target.emoji, style: const TextStyle(fontSize: 64)),
+            Interactive3DCard(
+              borderRadius: BorderRadius.circular(32),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(color: AppColors.cardBorder, width: 2),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x35E94B8A),
+                      blurRadius: 22,
+                      offset: Offset(0, 8),
                     ),
-                  )
-                else
-                  Text(target.emoji, style: const TextStyle(fontSize: 64)),
-              ],
+                  ],
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 140,
+                      height: 140,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.palePurple,
+                      ),
+                    ),
+                    if (target.image != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          target.image!,
+                          width: 90,
+                          height: 115,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Text(target.emoji, style: const TextStyle(fontSize: 64)),
+                        ),
+                      )
+                    else
+                      Text(target.emoji, style: const TextStyle(fontSize: 64)),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             const Text(

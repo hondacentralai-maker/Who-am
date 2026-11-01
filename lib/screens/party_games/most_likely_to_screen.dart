@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../models/party_game_models.dart';
+import '../../services/game_audio_service.dart';
 import '../../services/preferences_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/celebration_overlay.dart';
+import '../../widgets/interactive_3d_card.dart';
+import '../../widgets/arcade_3d_buzzer.dart';
 
 class MostLikelyToScreen extends StatefulWidget {
   final List<String>? initialPlayers;
@@ -47,14 +51,20 @@ class _MostLikelyToScreenState extends State<MostLikelyToScreen> {
   void _castVote(String player) {
     if (_isRevealed) return;
     PreferencesService.triggerHaptic(AppHapticType.selection);
+    GameAudioService().playTap();
     setState(() {
       _selectedVote = player;
       _votes[player] = (_votes[player] ?? 0) + 1;
     });
   }
 
-  void _revealResults() {
+  void _revealResults() async {
     PreferencesService.triggerHaptic(AppHapticType.medium);
+    GameAudioService().playSuccess();
+    await PreferencesService.recordPartyGameFinished(pointsEarned: 10);
+    if (mounted) {
+      CelebrationOverlay.show(context);
+    }
     setState(() {
       _isRevealed = true;
     });
@@ -62,6 +72,7 @@ class _MostLikelyToScreenState extends State<MostLikelyToScreen> {
 
   void _nextQuestion() {
     PreferencesService.triggerHaptic(AppHapticType.light);
+    GameAudioService().playCardPlace();
     setState(() {
       _currentIndex = (_currentIndex + 1) % _prompts.length;
       _resetVotes();
@@ -140,44 +151,45 @@ class _MostLikelyToScreenState extends State<MostLikelyToScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Prompt Question Card
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF5E2B97), Color(0xFF9C27B0)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              Interactive3DCard(
+                borderRadius: BorderRadius.circular(28),
+                maxTiltAngle: 0.20,
+                enableGlare: true,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: AppShadows.floatingShadow,
                   ),
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: AppShadows.floatingShadow,
-                ),
-                child: Column(
-                  children: [
-                    Text(prompt.emoji, style: const TextStyle(fontSize: 48)),
-                    const SizedBox(height: 12),
-                    Text(
-                      prompt.question,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        height: 1.5,
+                  child: Column(
+                    children: [
+                      Text(prompt.emoji, style: const TextStyle(fontSize: 48)),
+                      const SizedBox(height: 12),
+                      Text(
+                        prompt.question,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          height: 1.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'تصنيف: ${prompt.category}',
+                          style: const TextStyle(color: Colors.white, fontSize: 11),
+                        ),
                       ),
-                      child: Text(
-                        'تصنيف: ${prompt.category}',
-                        style: const TextStyle(color: Colors.white, fontSize: 11),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -200,7 +212,7 @@ class _MostLikelyToScreenState extends State<MostLikelyToScreen> {
                     final percent = totalVotes > 0 ? (voteCount / totalVotes) : 0.0;
                     final isWinner = _isRevealed && winnerPlayer == player;
 
-                    return Container(
+                    final itemCard = Container(
                       margin: const EdgeInsets.only(bottom: 10),
                       decoration: BoxDecoration(
                         color: isWinner
@@ -294,31 +306,37 @@ class _MostLikelyToScreenState extends State<MostLikelyToScreen> {
                         ),
                       ),
                     );
+
+                    return isWinner
+                        ? Interactive3DCard(
+                            borderRadius: BorderRadius.circular(18),
+                            maxTiltAngle: 0.15,
+                            enableGlare: true,
+                            child: itemCard,
+                          )
+                        : itemCard;
                   },
                 ),
               ),
 
-              // Bottom Actions
-              Row(
-                children: [
-                  if (!_isRevealed)
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _selectedVote != null ? _revealResults : null,
-                        icon: const Icon(Icons.visibility_rounded),
-                        label: const Text('كشف نتيجة التصويت! 👀'),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _nextQuestion,
-                        icon: const Icon(Icons.arrow_forward_rounded),
-                        label: const Text('السؤال التالي ➡️'),
-                      ),
-                    ),
-                ],
-              ),
+              // Bottom Actions (3D Arcade Buzzer)
+              if (!_isRevealed)
+                Arcade3DBuzzer(
+                  label: 'كشف نتيجة التصويت! 👀',
+                  icon: Icons.visibility_rounded,
+                  color: AppColors.purple,
+                  height: 52,
+                  enabled: _selectedVote != null,
+                  onPressed: _selectedVote != null ? _revealResults : null,
+                )
+              else
+                Arcade3DBuzzer(
+                  label: 'السؤال التالي ➡️',
+                  icon: Icons.arrow_forward_rounded,
+                  color: AppColors.purple,
+                  height: 52,
+                  onPressed: _nextQuestion,
+                ),
             ],
           ),
         ),

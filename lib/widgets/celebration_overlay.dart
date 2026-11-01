@@ -41,26 +41,27 @@ class _CelebrationParticleEffectState extends State<_CelebrationParticleEffect>
     );
 
     final colors = [
-      const Color(0xFF7047D7),
-      const Color(0xFFD94FA0),
-      const Color(0xFFF5C842),
-      const Color(0xFF00E676),
-      const Color(0xFF00B0FF),
-      Colors.pinkAccent,
-      Colors.amberAccent,
+      const Color(0xFFE94B8A), // Pastel Pink
+      const Color(0xFFBA68C8), // Soft Lavender
+      const Color(0xFFFFD54F), // Metallic Gold
+      const Color(0xFFF06292), // Baby Pink
+      const Color(0xFF4DD0E1), // Soft Cyan
+      const Color(0xFFFF80AB), // Rose Glaze
+      const Color(0xFFFFF176), // Star Yellow
     ];
 
-    for (int i = 0; i < 45; i++) {
+    for (int i = 0; i < 50; i++) {
       _particles.add(
         _Particle(
           x: _rnd.nextDouble(),
-          startY: -0.1 - (_rnd.nextDouble() * 0.3),
+          startY: -0.1 - (_rnd.nextDouble() * 0.35),
           color: colors[_rnd.nextInt(colors.length)],
-          size: 6.0 + _rnd.nextDouble() * 8.0,
-          speed: 0.8 + _rnd.nextDouble() * 0.8,
-          drift: (_rnd.nextDouble() - 0.5) * 0.4,
+          size: 7.0 + _rnd.nextDouble() * 9.0,
+          speed: 0.75 + _rnd.nextDouble() * 0.85,
+          drift: (_rnd.nextDouble() - 0.5) * 0.45,
           rotation: _rnd.nextDouble() * 2 * pi,
-          rotationSpeed: (_rnd.nextDouble() - 0.5) * 8.0,
+          rotationSpeed: (_rnd.nextDouble() - 0.5) * 9.0,
+          isStar: i % 4 == 0,
         ),
       );
     }
@@ -104,6 +105,7 @@ class _Particle {
   final double drift;
   final double rotation;
   final double rotationSpeed;
+  final bool isStar;
 
   _Particle({
     required this.x,
@@ -114,6 +116,7 @@ class _Particle {
     required this.drift,
     required this.rotation,
     required this.rotationSpeed,
+    this.isStar = false,
   });
 }
 
@@ -136,16 +139,39 @@ class _ConfettiPainter extends CustomPainter {
 
       paint.color = p.color.withValues(alpha: (1.0 - progress * 0.6).clamp(0.0, 1.0));
 
+      // فيزياء الدوران والتقلب ثلاثي الأبعاد (3D Tumbling Paper Ribbon)
+      final flipScale = cos(currentRot * 2.2).abs().clamp(0.15, 1.0);
+
       canvas.save();
       canvas.translate(currentX, currentY);
       canvas.rotate(currentRot);
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset.zero, width: p.size, height: p.size * 0.6),
-          const Radius.circular(2),
-        ),
-        paint,
-      );
+
+      if (p.isStar) {
+        // رسم نجمة رباعية لامعة
+        final starPath = Path();
+        final s = p.size * 0.7 * flipScale;
+        starPath.moveTo(0, -s);
+        starPath.quadraticBezierTo(0, 0, s, 0);
+        starPath.quadraticBezierTo(0, 0, 0, s);
+        starPath.quadraticBezierTo(0, 0, -s, 0);
+        starPath.quadraticBezierTo(0, 0, 0, -s);
+        starPath.close();
+        canvas.drawPath(starPath, paint);
+      } else {
+        // شريحة احتفالية تتقلب في الفضاء ثلاثي الأبعاد
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+              center: Offset.zero,
+              width: p.size * flipScale,
+              height: p.size * 0.55,
+            ),
+            const Radius.circular(2),
+          ),
+          paint,
+        );
+      }
+
       canvas.restore();
     }
   }

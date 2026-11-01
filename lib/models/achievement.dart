@@ -60,8 +60,11 @@ class GameStats {
   final int correctGuesses;
   final int cardsExplored;
   final int knowMeAnswered;
+  final int jackarooWins;
   final int currentStreak;
   final int highestStreak;
+  final int wheelSpins;
+  final int partyGamesPlayed;
 
   const GameStats({
     this.totalPoints = 0,
@@ -69,8 +72,11 @@ class GameStats {
     this.correctGuesses = 0,
     this.cardsExplored = 0,
     this.knowMeAnswered = 0,
+    this.jackarooWins = 0,
     this.currentStreak = 1,
     this.highestStreak = 1,
+    this.wheelSpins = 0,
+    this.partyGamesPlayed = 0,
   });
 
   int get level => (totalPoints ~/ 50) + 1;
@@ -81,8 +87,11 @@ class GameStats {
         correctGuesses: j['correct_guesses'] ?? 0,
         cardsExplored: j['cards_explored'] ?? 0,
         knowMeAnswered: j['know_me_answered'] ?? 0,
+        jackarooWins: j['jackaroo_wins'] ?? 0,
         currentStreak: j['current_streak'] ?? 1,
         highestStreak: j['highest_streak'] ?? 1,
+        wheelSpins: j['wheel_spins'] ?? 0,
+        partyGamesPlayed: j['party_games_played'] ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
@@ -91,8 +100,11 @@ class GameStats {
         'correct_guesses': correctGuesses,
         'cards_explored': cardsExplored,
         'know_me_answered': knowMeAnswered,
+        'jackaroo_wins': jackarooWins,
         'current_streak': currentStreak,
         'highest_streak': highestStreak,
+        'wheel_spins': wheelSpins,
+        'party_games_played': partyGamesPlayed,
       };
 
   GameStats copyWith({
@@ -101,8 +113,11 @@ class GameStats {
     int? correctGuesses,
     int? cardsExplored,
     int? knowMeAnswered,
+    int? jackarooWins,
     int? currentStreak,
     int? highestStreak,
+    int? wheelSpins,
+    int? partyGamesPlayed,
   }) =>
       GameStats(
         totalPoints: totalPoints ?? this.totalPoints,
@@ -110,7 +125,10 @@ class GameStats {
         correctGuesses: correctGuesses ?? this.correctGuesses,
         cardsExplored: cardsExplored ?? this.cardsExplored,
         knowMeAnswered: knowMeAnswered ?? this.knowMeAnswered,
+        jackarooWins: jackarooWins ?? this.jackarooWins,
         currentStreak: currentStreak ?? this.currentStreak,
         highestStreak: highestStreak ?? this.highestStreak,
+        wheelSpins: wheelSpins ?? this.wheelSpins,
+        partyGamesPlayed: partyGamesPlayed ?? this.partyGamesPlayed,
       );
 }

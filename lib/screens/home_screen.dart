@@ -18,13 +18,25 @@ import 'settings_screen.dart';
 import 'share_moments_dialog.dart';
 import 'structured_session_screen.dart';
 import '../widgets/bouncy_tap.dart';
+import '../widgets/coin_3d_dialog.dart';
+import '../widgets/dice_3d_dialog.dart';
 import '../widgets/glass_bottom_nav.dart';
+import '../widgets/ambient_particles.dart';
+import '../widgets/interactive_3d_card.dart';
+import '../theme/page_transitions.dart';
 import 'party_games/five_seconds_screen.dart';
 import 'party_games/most_likely_to_screen.dart';
 import 'party_games/spyfall_screen.dart';
 import 'party_games/stop_game_screen.dart';
 import 'party_games/taboo_screen.dart';
 import 'party_games/would_you_rather_screen.dart';
+import 'party_games/feen_el_so2al_screen.dart';
+import 'party_games/besaraha_wal3a_screen.dart';
+import 'party_games/family_stories_screen.dart';
+import 'party_games/girls_lakin_screen.dart';
+import 'party_games/hatrick_screen.dart';
+import 'party_games/bottle_spin_screen.dart';
+import 'party_games/jackaroo_3d_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onThemeChanged;
@@ -143,6 +155,183 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _activeSession = PreferencesService.getActiveSession();
     });
+  }
+
+  void _resumeSession(BuildContext context, Map<String, dynamic> session) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const StructuredSessionScreen()),
+    ).then((_) => _loadState());
+  }
+
+  void _navigateToResumeRoute(BuildContext context, String? route) {
+    if (route == null) return;
+    Widget? targetScreen;
+    switch (route) {
+      case 'couples_cards':
+        targetScreen = const CouplesCardsScreen();
+        break;
+      case 'decision_wheel':
+        targetScreen = const DecisionWheelScreen();
+        break;
+      case 'know_me':
+        targetScreen = const KnowMeScreen();
+        break;
+      case 'love_notes':
+        targetScreen = const LoveNotesScreen();
+        break;
+      case 'stop_game':
+        targetScreen = const StopGameScreen();
+        break;
+      case 'taboo':
+        targetScreen = const TabooScreen();
+        break;
+      case 'most_likely_to':
+        targetScreen = const MostLikelyToScreen();
+        break;
+      case 'five_seconds':
+        targetScreen = const FiveSecondsScreen();
+        break;
+      case 'spyfall':
+        targetScreen = const SpyfallScreen();
+        break;
+      case 'would_you_rather':
+        targetScreen = const WouldYouRatherScreen();
+        break;
+      case 'bottle_spin':
+        targetScreen = const BottleSpinScreen();
+        break;
+      case 'jackaroo_3d':
+        targetScreen = const Jackaroo3DScreen();
+        break;
+      case 'besaraha_wal3a':
+        targetScreen = const BesarahaWal3aScreen();
+        break;
+      case 'family_stories':
+        targetScreen = const FamilyStoriesScreen();
+        break;
+      case 'girls_lakin':
+        targetScreen = const GirlsLakinScreen();
+        break;
+      case 'feen_el_so2al':
+        targetScreen = const FeenElSo2alScreen();
+        break;
+      case 'hatrick':
+        targetScreen = const HatrickScreen();
+        break;
+      case 'daily_question':
+        targetScreen = const DailyQuestionDetailScreen();
+        break;
+      case 'this_or_that':
+        targetScreen = const ThisOrThatScreen();
+        break;
+      case 'guess_my_answer':
+        targetScreen = const GuessMyAnswerScreen();
+        break;
+      default:
+        targetScreen = const PartyGamesHubScreen();
+    }
+    Navigator.push(
+      context,
+      PastelPageRoute(builder: (_) => targetScreen!),
+    ).then((_) => _loadState());
+  }
+
+  Widget _buildQuickResumeBanner(BuildContext context) {
+    final title = PreferencesService.lastPlayedGameTitle ?? '';
+    final route = PreferencesService.lastPlayedGameRoute;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Interactive3DCard(
+      borderRadius: BorderRadius.circular(20),
+      maxTiltAngle: 0.12,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  colors: [Color(0xFF2E1C3C), Color(0xFF1E132A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : const LinearGradient(
+                  colors: [Color(0xFFFFF0F5), Color(0xFFFBE4EE)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? AppColors.neonPurple.withValues(alpha: 0.4) : const Color(0xFFF48FB1),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isDark ? AppColors.neonPurple : const Color(0xFFF48FB1)).withValues(alpha: 0.18),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF3E2352) : const Color(0xFFFFD1DC),
+                shape: BoxShape.circle,
+              ),
+              child: const Text('⚡', style: TextStyle(fontSize: 18)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'متابعة آخر نشاط',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFE91E63),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF2D142C),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: () => _navigateToResumeRoute(context, route),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE91E63),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('متابعة', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  SizedBox(width: 4),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 11),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showGameRules() {
@@ -353,9 +542,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: SafeArea(
         bottom: false,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 260),
-          child: _buildCurrentTab(context, isDark),
+        child: AmbientParticles(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            child: _buildCurrentTab(context, isDark),
+          ),
         ),
       ),
     );
@@ -386,6 +577,13 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Couples Days Banner (Days Together, Anniversary & Names)
           CouplesDaysBanner(onProfileUpdated: _loadState),
+
+          // Quick Resume Banner (متابعة آخر نشاط)
+          if (PreferencesService.lastPlayedGameTitle != null) ...[
+            const SizedBox(height: 12),
+            _buildQuickResumeBanner(context),
+          ],
+          const SizedBox(height: 14),
 
           // Hero Banner Matching Reference Screen 1
           Container(
@@ -569,7 +767,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Resume Session Banner (if available)
           if (_activeSession != null) ...[
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E1736) : AppColors.palePurple,
                 borderRadius: BorderRadius.circular(20),
@@ -577,17 +775,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: isDark ? AppColors.neonPurple : AppColors.purple,
                   width: 1.5,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isDark ? AppColors.neonPurple : AppColors.purple).withValues(alpha: 0.12),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
-                  const Text('⏳', style: TextStyle(fontSize: 26)),
+                  const Text(
+                    "⏳",
+                    style: TextStyle(fontSize: 28),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'تابع لعبتك السابقة',
+                          "تابع لعبتك السابقة 🎮",
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
                             color: isDark ? AppColors.neonPurple : AppColors.deepPurple,
@@ -595,7 +803,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         Text(
-                          'لديك جلسة غير مكتملة، هل ترغب في إكمالها؟',
+                          "لديك جلسة غير مكتملة، هل ترغب في إكمالها؟",
                           style: TextStyle(
                             color: isDark ? AppColors.midnightMuted : AppColors.muted,
                             fontSize: 11,
@@ -604,13 +812,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  TextButton(
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: isDark ? AppColors.neonPurple : AppColors.deepPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: () {
+                      PreferencesService.triggerHaptic(AppHapticType.selection);
+                      _resumeSession(context, _activeSession!);
+                    },
+                    child: const Text("متابعة", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18, color: Colors.redAccent),
+                    tooltip: 'إلغاء الجلسة',
                     onPressed: () {
                       PreferencesService.clearActiveSession();
                       _loadState();
                     },
-                    child: const Text('إلغاء',
-                        style: TextStyle(color: Colors.redAccent, fontSize: 12)),
                   ),
                 ],
               ),
@@ -634,12 +856,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Mode 0: ألعاب الجلسات والتجمعات (Party Games Hub)
+
+
+          // Mode 1: ألعاب الجلسات والتجمعات (Party Games Hub)
           _ModeTile(
             icon: Icons.celebration_rounded,
             title: 'ألعاب الجلسات والتجمعات',
             subtitle:
-                '6 ألعاب حماسية للجلسات والبنات (إنسان حيوان، مين فينا، 5 ثواني، الجاسوسة، المحظورات، لو خيروك)',
+                '11 لعبة حماسية للجلسات والبنات والتحديات الرياضية والعائلية (إنسان حيوان، مين فينا، 5 ثواني، المحظورات، هاتريك، وغيرها)',
             badgeText: 'مهرجان الجلسات 🥳',
             accentColor: const Color(0xFFFF5252),
             onTap: () => Navigator.push(
@@ -702,11 +926,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Mode 4: أسئلة وتحديات للأزواج
+          // Mode 4: أسئلة وتحديات للأزواج (باقات الكروت المصرية)
           _ModeTile(
             icon: Icons.favorite_rounded,
             title: 'أسئلة وتحديات للأزواج',
-            subtitle: '100+ بطاقة حوار متدرجة بدون تكرار في الجلسة الواحدة',
+            subtitle: '150+ بطاقة (سنة أولى جواز، مودة ورحمة، كلام من القلب Deep، وميمز)',
+            badgeText: 'باقات جديدة 🃏',
             accentColor: const Color(0xFFEC4899),
             onTap: () => Navigator.push(
               context,
@@ -938,6 +1163,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
 
+
+
           // 1. Stop Game
           _ModeTile(
             icon: Icons.pets_rounded,
@@ -1041,6 +1268,90 @@ class _HomeScreenState extends State<HomeScreen> {
               MaterialPageRoute(builder: (_) => const WouldYouRatherScreen()),
             ),
           ),
+          const SizedBox(height: 12),
+
+          // 7. Feen El So2al
+          _ModeTile(
+            icon: Icons.help_center_rounded,
+            title: 'فين السؤال؟ (خمن السؤال المخفي)',
+            subtitle: 'إجابة مكشوفة أو موقف غريب.. والمطلوب تخمين السؤال الحقيقي المستخبي وراه!',
+            badgeText: 'ذكاء وتخمين ❓',
+            accentColor: const Color(0xFF7E57C2),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FeenElSo2alScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 8. Besaraha Wal3a
+          _ModeTile(
+            icon: Icons.local_fire_department_rounded,
+            title: 'بصراحة وتحديات ولعة',
+            subtitle: 'كروت صراحة عميقة للشلة، أحكام فورية نارية، وكروت حظ ومفاجآت',
+            badgeText: 'نارية وحماس 🔥',
+            accentColor: const Color(0xFFFF5722),
+            onTap: () {
+              final profile = PreferencesService.getCouplesProfile();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BesarahaWal3aScreen(
+                    initialPlayers: [profile.partner1Name, profile.partner2Name, 'صديقة 1', 'صديقة 2'],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+
+          // 9. Family Stories
+          _ModeTile(
+            icon: Icons.cottage_rounded,
+            title: 'حكاوي العيلة والذكريات',
+            subtitle: 'كروت مخصصة للمة العيلة.. ذكريات الطفولة والشيطنة، ومواقف الأجداد زمان',
+            badgeText: 'دفء ونوستالجيا 🏡',
+            accentColor: const Color(0xFF4CAF50),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FamilyStoriesScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 10. Girls Lakin
+          _ModeTile(
+            icon: Icons.spa_rounded,
+            title: 'جلسات البنات (Girls ولكن)',
+            subtitle: 'مواقف خاصة بجمعات الصديقات، فضفضة، ستايل وخروجات، وتحديات عفوية',
+            badgeText: 'أسرار وضحك 💅',
+            accentColor: const Color(0xFFE91E63),
+            onTap: () {
+              final profile = PreferencesService.getCouplesProfile();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => GirlsLakinScreen(
+                    initialPlayers: [profile.partner1Name, profile.partner2Name, 'صديقة 1', 'صديقة 2'],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+
+          // 11. Hatrick Soccer Trivia
+          _ModeTile(
+            icon: Icons.sports_soccer_rounded,
+            title: 'هاتريك: تحدي كرة القدم ⚽',
+            subtitle: 'معلومات كروية مشتعلة، بطولات، أساطير المستديرة، وتحديات كروية سريعة للشلة',
+            badgeText: 'عشاق الكرة ⚽',
+            accentColor: const Color(0xFF2E7D32),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HatrickScreen()),
+            ),
+          ),
         ],
       ),
     );
@@ -1087,7 +1398,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _ModeTile(
             icon: Icons.favorite_rounded,
             title: 'أسئلة وتحديات للأزواج',
-            subtitle: '100+ بطاقة حوار متدرجة بدون تكرار في الجلسة الواحدة',
+            subtitle: '150+ بطاقة (سنة أولى جواز، مودة ورحمة، كلام من القلب Deep، وميمز)',
+            badgeText: 'باقات جديدة 🃏',
             accentColor: const Color(0xFFEC4899),
             onTap: () => Navigator.push(
               context,
@@ -1367,6 +1679,9 @@ class _HomeScreenState extends State<HomeScreen> {
               MaterialPageRoute(builder: (_) => const OnlineRoomScreen()),
             ),
           ),
+          const SizedBox(height: 12),
+
+
         ],
       ),
     );
@@ -1396,6 +1711,52 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
           MaterialPageRoute(builder: (_) => const LoveNotesScreen()),
         ),
+      ),
+      (
+        icon: Icons.casino_rounded,
+        color: const Color(0xFFF06292),
+        title: 'نرد القرارات',
+        badge: 'واقعي 3D 🎲',
+        onTap: () => Dice3DDialog.show(context),
+      ),
+      (
+        icon: Icons.monetization_on_rounded,
+        color: const Color(0xFFFFA000),
+        title: 'قرعة العملة',
+        badge: 'معدني 3D 🪙',
+        onTap: () => Coin3DDialog.show(context),
+      ),
+      (
+        icon: Icons.wine_bar_rounded,
+        color: const Color(0xFFD81B60),
+        title: 'لف الزجاجة',
+        badge: 'جلسات 3D 🍾',
+        onTap: () {
+          final profile = PreferencesService.getCouplesProfile();
+          final players = [profile.partner1Name, profile.partner2Name, 'صديقة 1', 'صديقة 2'];
+          Navigator.push(
+            context,
+            Perspective3DPageRoute(
+              builder: (_) => BottleSpinScreen(initialPlayers: players),
+            ),
+          );
+        },
+      ),
+      (
+        icon: Icons.view_in_ar_rounded,
+        color: const Color(0xFF7C3AED),
+        title: 'جاكارو 3D',
+        badge: 'Unity 3D 🎲',
+        onTap: () {
+          final profile = PreferencesService.getCouplesProfile();
+          final players = [profile.partner1Name, profile.partner2Name, 'لاعب 3', 'لاعب 4'];
+          Navigator.push(
+            context,
+            Perspective3DPageRoute(
+              builder: (_) => Jackaroo3DScreen(initialPlayers: players),
+            ),
+          );
+        },
       ),
       (
         icon: Icons.favorite_rounded,
@@ -1469,17 +1830,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         )
                       : BoxDecoration(
-                          color: Colors.white,
+                          gradient: AppColors.softPastelCardGradient,
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: item.color.withValues(alpha: 0.2),
+                            color: AppColors.cardBorder,
                             width: 1.2,
                           ),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
-                              color: item.color.withValues(alpha: 0.08),
+                              color: Color(0x10E94B8A),
                               blurRadius: 12,
-                              offset: const Offset(0, 4),
+                              offset: Offset(0, 4),
                             ),
                           ],
                         ),
@@ -1574,7 +1935,7 @@ class _ModeTile extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: isDark
             ? BoxDecoration(
-                color: const Color(0xFF17122A),
+                color: const Color(0xFF28182D),
                 borderRadius: BorderRadius.circular(AppRadius.card),
                 border: Border.all(
                   color: color.withValues(alpha: 0.35),
@@ -1590,17 +1951,17 @@ class _ModeTile extends StatelessWidget {
                 ],
               )
             : BoxDecoration(
-                color: Colors.white,
+                gradient: AppColors.softPastelCardGradient,
                 borderRadius: BorderRadius.circular(AppRadius.card),
                 border: Border.all(
-                  color: color.withValues(alpha: 0.15),
+                  color: AppColors.cardBorder,
                   width: 1.2,
                 ),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
-                    color: color.withValues(alpha: 0.08),
+                    color: Color(0x10E94B8A),
                     blurRadius: 16,
-                    offset: const Offset(0, 6),
+                    offset: Offset(0, 4),
                   ),
                 ],
               ),
@@ -1612,15 +1973,15 @@ class _ModeTile extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    color.withValues(alpha: isDark ? 0.28 : 0.15),
-                    color.withValues(alpha: isDark ? 0.14 : 0.05),
+                    color.withValues(alpha: isDark ? 0.28 : 0.22),
+                    color.withValues(alpha: isDark ? 0.14 : 0.08),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: color.withValues(alpha: isDark ? 0.4 : 0.2),
+                  color: color.withValues(alpha: isDark ? 0.4 : 0.28),
                 ),
               ),
               child: Icon(
@@ -1640,9 +2001,9 @@ class _ModeTile extends StatelessWidget {
                         child: Text(
                           title,
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: isDark ? AppColors.midnightText : AppColors.ink,
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? AppColors.midnightText : AppColors.deepPurple,
                           ),
                         ),
                       ),
@@ -1657,10 +2018,11 @@ class _ModeTile extends StatelessWidget {
                             color: isDark
                                 ? color.withValues(alpha: 0.25)
                                 : AppColors.palePurple,
-                            borderRadius: BorderRadius.circular(10),
-                            border: isDark
-                                ? Border.all(color: color.withValues(alpha: 0.4), width: 1)
-                                : null,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? color.withValues(alpha: 0.4) : AppColors.lightPurple,
+                              width: 0.8,
+                            ),
                           ),
                           child: Text(
                             badgeText!,
@@ -1680,7 +2042,7 @@ class _ModeTile extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: TextStyle(
                       color: isDark ? AppColors.midnightMuted : AppColors.muted,
-                      fontSize: 12,
+                      fontSize: 11.5,
                       height: 1.4,
                     ),
                   ),
@@ -1691,7 +2053,7 @@ class _ModeTile extends StatelessWidget {
             Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 14,
-              color: isDark ? AppColors.neonPurple : AppColors.purple,
+              color: isDark ? AppColors.neonPurple : const Color(0xFFD0658E),
             ),
           ],
         ),

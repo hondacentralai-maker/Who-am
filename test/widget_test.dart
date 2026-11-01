@@ -10,10 +10,34 @@ import 'package:arabic_couples_game/models/game_session.dart';
 import 'package:arabic_couples_game/models/know_me_question.dart';
 import 'package:arabic_couples_game/models/love_note.dart';
 import 'package:arabic_couples_game/models/partner_presence.dart';
+import 'package:arabic_couples_game/screens/achievements_screen.dart';
+import 'package:arabic_couples_game/screens/home_screen.dart';
 import 'package:arabic_couples_game/screens/online_room_screen.dart';
+import 'package:arabic_couples_game/screens/settings_screen.dart';
+import 'package:arabic_couples_game/theme/app_theme.dart';
+import 'package:arabic_couples_game/services/game_audio_service.dart';
+import 'package:arabic_couples_game/services/game_data_service.dart';
 import 'package:arabic_couples_game/services/preferences_service.dart';
+import 'package:flutter/services.dart';
+import 'package:arabic_couples_game/widgets/coin_3d_dialog.dart';
+import 'package:arabic_couples_game/widgets/dice_3d_dialog.dart';
+import 'package:arabic_couples_game/widgets/interactive_3d_card.dart';
 
 void main() {
+  setUpAll(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('xyz.luan/audioplayers.global'),
+      (MethodCall methodCall) async => 1,
+    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('xyz.luan/audioplayers'),
+      (MethodCall methodCall) async => 1,
+    );
+  });
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({
       'streak_days': 3,
@@ -450,6 +474,7 @@ void main() {
 
     expect(OnlineGameMode.guessWho.arabicTitle, equals('خمن الشخصية'));
     expect(OnlineGameMode.guessWho.emoji, equals('🎭'));
+
   });
 
   test('Multiplayer broadcast event payloads for Know-Me and Guess-Who', () {
@@ -688,5 +713,354 @@ void main() {
     expect(payload['room_code'], equals('ABC888'));
     expect(payload['host_name'], equals('أحمد'));
     expect(DateTime.tryParse(payload['timestamp']!), isNotNull);
+  });
+
+  test('CouplesCard deck property default and JSON roundtrip', () {
+    const card = CouplesCard(
+      id: 'test_deck_card',
+      deck: 'first_year',
+      category: 'سنة أولى جواز',
+      type: 'لو خيروك',
+      level: 'خفيف',
+      text: 'الموبايل ممنوع على السفرة ولا مسموح؟',
+      purpose: 'اتفاقات البيت الجديد',
+    );
+
+    final json = card.toJson();
+    expect(json['deck'], equals('first_year'));
+    expect(json['type'], equals('لو خيروك'));
+
+    final restored = CouplesCard.fromJson(json);
+    expect(restored.deck, equals('first_year'));
+    expect(restored.type, equals('لو خيروك'));
+
+    // Test default deck for legacy compatibility
+    final defaultDeckCard = CouplesCard.fromJson({
+      'id': 'legacy_card',
+      'category': 'عام',
+      'type': 'سؤال',
+      'level': 'خفيف',
+      'text': 'سؤال قديم',
+      'purpose': '',
+    });
+    expect(defaultDeckCard.deck, equals('classic'));
+  });
+
+  test('DecisionWheelItem defaultItems contains Pick A Date options', () {
+    final items = DecisionWheelItem.defaultItems();
+    final dateItems = items.where((i) => i.category.contains('موعد')).toList();
+    expect(dateItems.length, greaterThanOrEqualTo(5));
+    expect(dateItems.any((i) => i.label.contains('عشاء رومانسي')), isTrue);
+  });
+
+  test('CouplesCard followUp property serialization and Salon deck verification', () async {
+    const card = CouplesCard(
+      id: 'sln_test',
+      deck: 'salon',
+      category: 'حدود الأهل',
+      type: 'موقف ونقاش',
+      level: 'عميق',
+      text: 'لو حصل خلاف بين الزوجين..',
+      purpose: 'استقلالية البيت',
+      followUp: 'امتى تطلب مساعدة حد من العيلة؟',
+    );
+
+    final map = card.toJson();
+    expect(map['follow_up'], equals('امتى تطلب مساعدة حد من العيلة؟'));
+    expect(map['deck'], equals('salon'));
+
+    final parsed = CouplesCard.fromJson(map);
+    expect(parsed.followUp, equals('امتى تطلب مساعدة حد من العيلة؟'));
+    expect(parsed.deck, equals('salon'));
+
+    // Verify loading cards from assets includes all 30 salon deck cards
+    final cards = await GameDataService.loadTypedCards();
+    final salonCards = cards.where((c) => c.deck == 'salon').toList();
+    expect(salonCards.length, equals(30));
+
+    // Verify each of the 6 key Egyptian salon categories has cards
+    final categories = salonCards.map((c) => c.category).toSet();
+    expect(categories.contains('حدود الأهل'), isTrue);
+    expect(categories.contains('الشغل والطموح'), isTrue);
+    expect(categories.contains('الماديات والفلوس'), isTrue);
+    expect(categories.contains('إدارة الغضب'), isTrue);
+    expect(categories.contains('الخصوصية والموبايل'), isTrue);
+    expect(categories.contains('التربية والتدين'), isTrue);
+
+    // Verify all salon cards have non-empty followUp questions
+    for (final sc in salonCards) {
+      expect(sc.followUp.isNotEmpty, isTrue, reason: 'Card ${sc.id} should have followUp');
+    }
+  });
+
+  test('PreferencesService party games and decision wheel stats, achievements, and audio aliases', () async {
+    final initialStats = PreferencesService.getStats();
+    final initialWheelSpins = initialStats.wheelSpins;
+    final initialPartyGames = initialStats.partyGamesPlayed;
+
+    // 1. Record wheel spin
+    await PreferencesService.recordWheelSpin(pointsEarned: 10);
+    final statsAfterWheel = PreferencesService.getStats();
+    expect(statsAfterWheel.wheelSpins, equals(initialWheelSpins + 1));
+    expect(statsAfterWheel.totalPoints, greaterThanOrEqualTo(10));
+
+    // Verify wheel_spinner achievement unlocked
+    var achievements = PreferencesService.getAchievements();
+    final wheelBadge = achievements.firstWhere((a) => a.id == 'wheel_spinner');
+    expect(wheelBadge.isUnlocked, isTrue);
+
+    // 2. Record party games until party_star is unlocked (3 games)
+    await PreferencesService.recordPartyGameFinished(pointsEarned: 10);
+    await PreferencesService.recordPartyGameFinished(pointsEarned: 10);
+    await PreferencesService.recordPartyGameFinished(pointsEarned: 10);
+
+    final statsAfterParty = PreferencesService.getStats();
+    expect(statsAfterParty.partyGamesPlayed, equals(initialPartyGames + 3));
+
+    achievements = PreferencesService.getAchievements();
+    final partyStarBadge = achievements.firstWhere((a) => a.id == 'party_star');
+    expect(partyStarBadge.isUnlocked, isTrue);
+
+    // 3. Unlock love_capsule
+    await PreferencesService.unlockAchievement('love_capsule');
+    achievements = PreferencesService.getAchievements();
+    final loveCapsuleBadge = achievements.firstWhere((a) => a.id == 'love_capsule');
+    expect(loveCapsuleBadge.isUnlocked, isTrue);
+
+    // 4. Test audio aliases safely
+    expect(() => GameAudioService().playCardSnap(), returnsNormally);
+    expect(() => GameAudioService().playMarbleMove(), returnsNormally);
+  });
+
+  testWidgets('AchievementsScreen renders statistics grid and updated titles', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    await PreferencesService.recordPartyGameFinished(pointsEarned: 10);
+    await PreferencesService.recordWheelSpin(pointsEarned: 10);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: AchievementsScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('الإنجازات والنقاط 🏆'), findsOneWidget);
+    expect(find.text('إحصائيات اللعب والتقارب'), findsOneWidget);
+    expect(find.text('ألعاب الجلسات'), findsOneWidget);
+    expect(find.text('لفات العجلة'), findsOneWidget);
+    expect(find.text('ألعاب التجمعات'), findsOneWidget);
+  });
+
+  testWidgets('SettingsScreen toggles sound and syncs with GameAudioService', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    GameAudioService().isSoundEnabled = true;
+    expect(GameAudioService().isSoundEnabled, isTrue);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SettingsScreen(onThemeChanged: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('المؤثرات الصوتية والاهتزاز'), findsOneWidget);
+    expect(find.text('نسخة 1.9.0 • صُنع بحب للأزواج في العالم العربي 💜'), findsOneWidget);
+
+    final switchFinder = find.widgetWithText(SwitchListTile, 'المؤثرات الصوتية والاهتزاز');
+    expect(switchFinder, findsOneWidget);
+
+    await tester.tap(switchFinder);
+    await tester.pumpAndSettle();
+
+    expect(PreferencesService.soundEnabled, isFalse);
+    expect(GameAudioService().isSoundEnabled, isFalse);
+  });
+
+  testWidgets('Interactive3DCard renders child and transforms on drag interaction',
+      (tester) async {
+    bool tapped = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 200,
+              height: 300,
+              child: Interactive3DCard(
+                onTap: () => tapped = true,
+                child: const Text('3D Card Test 🎴'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('3D Card Test 🎴'), findsOneWidget);
+
+    // Simulate drag on card
+    final cardCenter = tester.getCenter(find.text('3D Card Test 🎴'));
+    final gesture = await tester.startGesture(cardCenter);
+    await gesture.moveBy(const Offset(30, 40));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Release and verify spring return animation
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    // Verify tap works
+    await tester.tap(find.text('3D Card Test 🎴'));
+    expect(tapped, isTrue);
+  });
+
+  testWidgets('Dice3DDialog renders 3D felt tray, tumbles dice, and invokes callback',
+      (tester) async {
+    int? rolledValue;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () {
+                Dice3DDialog.show(
+                  context,
+                  onResult: (val) => rolledValue = val,
+                );
+              },
+              child: const Text('Open 3D Dice'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tap to open dialog
+    await tester.tap(find.text('Open 3D Dice'));
+    await tester.pump(); // Start opening dialog
+
+    // Dialog should be present with header and re-roll button
+    expect(find.text('نرد القرارات 3D'), findsOneWidget);
+    expect(find.text('رمي جديد 🎲'), findsOneWidget);
+
+    // Let initial automatic roll animation complete
+    await tester.pumpAndSettle(const Duration(milliseconds: 1600));
+
+    expect(rolledValue, isNotNull);
+    expect(rolledValue, inInclusiveRange(1, 6));
+
+    // Tap to roll again
+    await tester.tap(find.text('رمي جديد 🎲'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Wait for the second roll animation to settle
+    await tester.pumpAndSettle(const Duration(milliseconds: 1600));
+    expect(rolledValue, inInclusiveRange(1, 6));
+
+    // Close dialog
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('نرد القرارات 3D'), findsNothing);
+  });
+
+  testWidgets('Coin3DDialog renders 3D metallic coin, flips with altitude, and returns heads/tails',
+      (tester) async {
+    bool? coinResult;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () {
+                Coin3DDialog.show(
+                  context,
+                  onResult: (val) => coinResult = val,
+                );
+              },
+              child: const Text('Open 3D Coin'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tap to open dialog
+    await tester.tap(find.text('Open 3D Coin'));
+    await tester.pump();
+
+    // Verify dialog header and choice chips
+    expect(find.text('قرعة العملة 3D'), findsOneWidget);
+    expect(find.text('👑 مَلِك'), findsOneWidget);
+    expect(find.text('📜 كِتَابَة'), findsOneWidget);
+
+    // Select guess
+    await tester.tap(find.text('👑 مَلِك'));
+    await tester.pump();
+
+    // Wait for the initial flip animation to finish
+    await tester.pumpAndSettle(const Duration(milliseconds: 1600));
+
+    expect(coinResult, isNotNull);
+
+    // Tap to flip again
+    await tester.tap(find.text('رمية جديدة 🪙'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Wait for the second flip animation to settle
+    await tester.pumpAndSettle(const Duration(milliseconds: 1600));
+    expect(coinResult, isNotNull);
+
+    // Close dialog
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('قرعة العملة 3D'), findsNothing);
+  });
+
+  testWidgets('HomeScreen quick moments bar includes 3D bottle spin shortcut and opens BottleSpinScreen',
+      (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    GameAudioService().isSoundEnabled = false;
+    PreferencesService.reducedMotion = true;
+    addTearDown(() => PreferencesService.reducedMotion = false);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: HomeScreen(onThemeChanged: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify quick moments shortcuts are present
+    expect(find.text('نرد القرارات'), findsOneWidget);
+    expect(find.text('قرعة العملة'), findsOneWidget);
+    expect(find.text('لف الزجاجة'), findsOneWidget);
+    expect(find.text('جلسات 3D 🍾'), findsOneWidget);
+
+    // Tap 'لف الزجاجة' shortcut
+    await tester.tap(find.text('لف الزجاجة'));
+    await tester.pumpAndSettle();
+
+    // Verify BottleSpinScreen is opened
+    expect(find.text('لف الزجاجة 3D 🍾'), findsOneWidget);
+    expect(find.text('لِف الزجاجة الآن 🍾'), findsOneWidget);
   });
 }

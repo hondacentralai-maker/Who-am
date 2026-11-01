@@ -194,6 +194,79 @@ class PreferencesService {
     }
   }
 
+  static Future<void> recordJackarooWin({int pointsEarned = 100}) async {
+    await recordGamePlay();
+    final current = getStats();
+    final updated = current.copyWith(
+      gamesPlayed: current.gamesPlayed + 1,
+      totalPoints: current.totalPoints + pointsEarned,
+      jackarooWins: current.jackarooWins + 1,
+      currentStreak: streakDays,
+      highestStreak:
+          streakDays > current.highestStreak ? streakDays : current.highestStreak,
+    );
+    await saveStats(updated);
+
+    await unlockAchievement('first_game');
+    await unlockAchievement('jackaroo_first_win');
+    if (updated.jackarooWins >= 3) {
+      await unlockAchievement('jackaroo_master');
+    }
+    if (streakDays >= 3) await unlockAchievement('streak_3');
+    if (streakDays >= 7) await unlockAchievement('streak_7');
+  }
+
+  static Future<void> recordJackarooMatchPlayed() async {
+    await recordGamePlay();
+    final current = getStats();
+    final updated = current.copyWith(
+      gamesPlayed: current.gamesPlayed + 1,
+      totalPoints: current.totalPoints + 20, // مكافأة مشاركة وجولة تكتيكية
+      currentStreak: streakDays,
+      highestStreak:
+          streakDays > current.highestStreak ? streakDays : current.highestStreak,
+    );
+    await saveStats(updated);
+    await unlockAchievement('first_game');
+    if (streakDays >= 3) await unlockAchievement('streak_3');
+  }
+
+  static Future<void> recordWheelSpin({int pointsEarned = 10}) async {
+    await recordGamePlay();
+    final current = getStats();
+    final updated = current.copyWith(
+      gamesPlayed: current.gamesPlayed + 1,
+      totalPoints: current.totalPoints + pointsEarned,
+      wheelSpins: current.wheelSpins + 1,
+      currentStreak: streakDays,
+      highestStreak:
+          streakDays > current.highestStreak ? streakDays : current.highestStreak,
+    );
+    await saveStats(updated);
+    await unlockAchievement('first_game');
+    await unlockAchievement('wheel_spinner');
+    if (streakDays >= 3) await unlockAchievement('streak_3');
+  }
+
+  static Future<void> recordPartyGameFinished({int pointsEarned = 10}) async {
+    await recordGamePlay();
+    final current = getStats();
+    final updated = current.copyWith(
+      gamesPlayed: current.gamesPlayed + 1,
+      totalPoints: current.totalPoints + pointsEarned,
+      partyGamesPlayed: current.partyGamesPlayed + 1,
+      currentStreak: streakDays,
+      highestStreak:
+          streakDays > current.highestStreak ? streakDays : current.highestStreak,
+    );
+    await saveStats(updated);
+    await unlockAchievement('first_game');
+    if (updated.partyGamesPlayed >= 3) {
+      await unlockAchievement('party_star');
+    }
+    if (streakDays >= 3) await unlockAchievement('streak_3');
+  }
+
   // ─── Achievements ──────────────────────────────────
   static const _achievementsKey = 'player_achievements_v1';
 
@@ -204,6 +277,20 @@ class PreferencesService {
           description: 'أكملتم أول جولة لعب معًا بنجاح',
           emoji: '🌱',
           points: 20,
+        ),
+        const Achievement(
+          id: 'jackaroo_first_win',
+          title: 'بطل السهرة 👑',
+          description: 'فزتم بأول جولة في ألعاب الجلسات والتجمعات',
+          emoji: '🎉',
+          points: 50,
+        ),
+        const Achievement(
+          id: 'jackaroo_master',
+          title: 'داهية التكتيك 🎯',
+          description: 'حقتتم 3 انتصارات حماسية في ألعاب التجمعات',
+          emoji: '🏆',
+          points: 100,
         ),
         const Achievement(
           id: 'streak_3',
@@ -246,6 +333,27 @@ class PreferencesService {
           description: 'أضفتم بطاقة أو سؤالاً خاصاً بكم إلى اللعبة',
           emoji: '🎨',
           points: 25,
+        ),
+        const Achievement(
+          id: 'party_star',
+          title: 'نجمة الجلسات 🥳',
+          description: 'شاركت في 3 جولات ضمن ألعاب الجلسات والتجمعات',
+          emoji: '🎉',
+          points: 35,
+        ),
+        const Achievement(
+          id: 'love_capsule',
+          title: 'صندوق الذكريات 💌',
+          description: 'كتبت وحفظت رسالة أو كبسولة زمنية مؤجلة',
+          emoji: '🎁',
+          points: 25,
+        ),
+        const Achievement(
+          id: 'wheel_spinner',
+          title: 'حاسمة القرارات 🎡',
+          description: 'دوّرت عجلة القرارات العفوية وحسمت الاختيار',
+          emoji: '🎡',
+          points: 20,
         ),
       ];
 
@@ -310,11 +418,21 @@ class PreferencesService {
     }
   }
 
+  // ─── Last Played Game & Quick Resume ───────────────
+  static String? get lastPlayedGameTitle => _p.getString('last_played_game_title');
+  static String? get lastPlayedGameRoute => _p.getString('last_played_game_route');
+
+  static Future<void> setLastPlayedGame({required String title, required String route}) async {
+    await _p.setString('last_played_game_title', title);
+    await _p.setString('last_played_game_route', route);
+  }
+
   // ─── Settings ──────────────────────────────────────
   static bool get isDarkMode => _p.getBool('dark_mode') ?? false;
   static Future<void> setDarkMode(bool v) => _p.setBool('dark_mode', v);
 
   static bool get reducedMotion => _p.getBool('reduced_motion') ?? false;
+  static set reducedMotion(bool v) => _p.setBool('reduced_motion', v);
   static Future<void> setReducedMotion(bool v) =>
       _p.setBool('reduced_motion', v);
 

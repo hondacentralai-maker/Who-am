@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/achievement.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/interactive_3d_card.dart';
 
 class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
@@ -28,10 +29,11 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   }
 
   String _getLevelTitle(int points) {
-    if (points >= 200) return 'رفيق الروح الأبدي 💎';
-    if (points >= 120) return 'خبير التقارب والتفاهم 🌟';
-    if (points >= 60) return 'محاور ذهبي مخلص 👑';
-    if (points >= 20) return 'شريك متفاعل ومتفهم 💜';
+    if (points >= 500) return 'أسطورة التفاهم والشراكة 👑💎';
+    if (points >= 300) return 'رفيق الروح المتألق 💎';
+    if (points >= 180) return 'خبير التقارب والتفاهم 🌟';
+    if (points >= 80) return 'محاور ذهبي مخلص 👑';
+    if (points >= 30) return 'شريك متفاعل ومتفهم 💜';
     return 'مبتدئ في رحلة التقارب 🌱';
   }
 
@@ -47,73 +49,76 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
           padding: const EdgeInsets.all(20),
           children: [
             // Level & Points Header Card
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(26),
-                boxShadow: AppShadows.floatingShadow,
-              ),
-              child: Column(
-                children: [
-                  const Text('👑', style: TextStyle(fontSize: 44)),
-                  const SizedBox(height: 8),
-                  Text(
-                    _getLevelTitle(_stats.totalPoints),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.stars_rounded,
-                                color: AppColors.accentGold, size: 20),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${_stats.totalPoints} نقطة',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
+            Interactive3DCard(
+              borderRadius: BorderRadius.circular(26),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(26),
+                  boxShadow: AppShadows.floatingShadow,
+                ),
+                child: Column(
+                  children: [
+                    const Text('👑', style: TextStyle(fontSize: 44)),
+                    const SizedBox(height: 8),
+                    Text(
+                      _getLevelTitle(_stats.totalPoints),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
                       ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '$unlockedCount من ${_achievements.length} شارة',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.stars_rounded,
+                                  color: AppColors.accentGold, size: 20),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${_stats.totalPoints} نقطة',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '$unlockedCount من ${_achievements.length} شارة',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -167,6 +172,46 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatTile(
+                    icon: Icons.grid_view_rounded,
+                    label: 'ألعاب التجمعات',
+                    value: '${_stats.gamesPlayed}',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildStatTile(
+                    icon: Icons.favorite_border_rounded,
+                    label: 'أسئلة تعرفني',
+                    value: '${_stats.knowMeAnswered}',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatTile(
+                    icon: Icons.celebration_rounded,
+                    label: 'ألعاب الجلسات',
+                    value: '${_stats.partyGamesPlayed}',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildStatTile(
+                    icon: Icons.casino_rounded,
+                    label: 'لفات العجلة',
+                    value: '${_stats.wheelSpins}',
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 28),
 
             // Badges Section
@@ -180,7 +225,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
             ),
             const SizedBox(height: 12),
             ..._achievements.map((achievement) {
-              return Container(
+              final badgeCard = Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -264,6 +309,15 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                   ],
                 ),
               );
+
+              return achievement.isUnlocked
+                  ? Interactive3DCard(
+                      borderRadius: BorderRadius.circular(AppRadius.card),
+                      maxTiltAngle: 0.14,
+                      enableGlare: true,
+                      child: badgeCard,
+                    )
+                  : badgeCard;
             }),
           ],
         ),

@@ -35,6 +35,8 @@ class PartnerPresence {
     }
   }
 
+  String get roleArabic => role == 'host' ? 'المضيف' : 'الضيف';
+
   PartnerPresence copyWith({
     String? userId,
     String? role,

@@ -2,8 +2,12 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../models/party_game_models.dart';
+import '../../services/game_audio_service.dart';
 import '../../services/preferences_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/celebration_overlay.dart';
+import '../../widgets/interactive_3d_card.dart';
+import '../../widgets/arcade_3d_buzzer.dart';
 
 class StopGameScreen extends StatefulWidget {
   final String? initialLetter;
@@ -66,6 +70,10 @@ class _StopGameScreenState extends State<StopGameScreen> {
       if (!mounted) return;
       if (_secondsRemaining > 0) {
         setState(() => _secondsRemaining--);
+        if (_secondsRemaining <= 5 && _secondsRemaining > 0) {
+          GameAudioService().playTick();
+          PreferencesService.triggerHaptic(AppHapticType.selection);
+        }
       } else {
         _triggerStop(isAutoTimeOut: true);
       }
@@ -74,6 +82,7 @@ class _StopGameScreenState extends State<StopGameScreen> {
 
   void _spinNewLetter() {
     PreferencesService.triggerHaptic(AppHapticType.medium);
+    GameAudioService().playCardDeal();
     final newLetter = StopGameData.arabicLetters[_random.nextInt(StopGameData.arabicLetters.length)];
     setState(() {
       _currentLetter = newLetter;
@@ -83,7 +92,12 @@ class _StopGameScreenState extends State<StopGameScreen> {
 
   void _triggerStop({bool isAutoTimeOut = false}) {
     _timer?.cancel();
-    PreferencesService.triggerHaptic(AppHapticType.medium);
+    PreferencesService.triggerHaptic(AppHapticType.heavy);
+    if (isAutoTimeOut) {
+      GameAudioService().playBuzzer();
+    } else {
+      GameAudioService().playWin();
+    }
 
     // Initial default scoring: filled fields starting with letter get 10, empty get 0
     for (final cat in StopGameData.defaultCategories) {
@@ -233,40 +247,53 @@ class _StopGameScreenState extends State<StopGameScreen> {
                   const SizedBox(height: 16),
 
                   // Total Score Card
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'مجموع نقاط الجولة:',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                  Interactive3DCard(
+                    borderRadius: BorderRadius.circular(18),
+                    maxTiltAngle: 0.15,
+                    enableGlare: true,
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'مجموع نقاط الجولة:',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '$total نقطة 🌟',
-                          style: const TextStyle(
-                            color: AppColors.accentGold,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
+                          Text(
+                            '$total نقطة 🌟',
+                            style: const TextStyle(
+                              color: AppColors.accentGold,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   FilledButton.icon(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _spinNewLetter();
+                    onPressed: () async {
+                      if (total > 0) {
+                        await PreferencesService.recordPartyGameFinished(pointsEarned: total);
+                      }
+                      if (context.mounted) {
+                        Navigator.pop(ctx);
+                        if (total >= 40) {
+                          CelebrationOverlay.show(context);
+                        }
+                        _spinNewLetter();
+                      }
                     },
                     icon: const Icon(Icons.refresh_rounded),
                     label: const Text('جولة جديدة مع حرف آخر 🎲'),
@@ -297,91 +324,90 @@ class _StopGameScreenState extends State<StopGameScreen> {
         child: Column(
           children: [
             // Top Letter & Timer Header
-            Container(
+            Interactive3DCard(
+              borderRadius: BorderRadius.circular(22),
               margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF532488), Color(0xFF7E39D2)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: AppShadows.cardShadow,
                 ),
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: AppShadows.cardShadow,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: const [
-                            BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 3)),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            _currentLetter,
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.deepPurple,
-                              fontFamily: 'Cairo',
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 3)),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              _currentLetter,
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.deepPurple,
+                                fontFamily: 'Cairo',
+                              ),
                             ),
                           ),
                         ),
+                        const SizedBox(width: 14),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'الحرف المطلوب',
+                              style: TextStyle(color: Color(0xFFE6DFFF), fontSize: 11),
+                            ),
+                            Text(
+                              'حرف ($_currentLetter)',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    // Timer Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _secondsRemaining <= 15
+                            ? Colors.redAccent.withValues(alpha: 0.9)
+                            : Colors.black.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const SizedBox(width: 14),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          const Text(
-                            'الحرف المطلوب',
-                            style: TextStyle(color: Color(0xFFE6DFFF), fontSize: 11),
-                          ),
+                          const Icon(Icons.timer_outlined, color: Colors.white, size: 18),
+                          const SizedBox(width: 6),
                           Text(
-                            'حرف ($_currentLetter)',
+                            '$_secondsRemaining ث',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-
-                  // Timer Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _secondsRemaining <= 15
-                          ? Colors.redAccent.withValues(alpha: 0.9)
-                          : Colors.black.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.timer_outlined, color: Colors.white, size: 18),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$_secondsRemaining ث',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -419,30 +445,15 @@ class _StopGameScreenState extends State<StopGameScreen> {
               ),
             ),
 
-            // Giant Red STOP Button
+            // Giant Red 3D STOP Buzzer
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFD32F2F),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  onPressed: _isRoundActive ? () => _triggerStop() : null,
-                  icon: const Icon(Icons.pan_tool_rounded, size: 24),
-                  label: const Text(
-                    'STOP! أوتوبيس كومبليت! 🛑',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Arcade3DBuzzer(
+                label: 'STOP! أوتوبيس كومبليت! 🛑',
+                icon: Icons.pan_tool_rounded,
+                color: const Color(0xFFD32F2F),
+                enabled: _isRoundActive,
+                onPressed: _isRoundActive ? () => _triggerStop() : null,
               ),
             ),
           ],

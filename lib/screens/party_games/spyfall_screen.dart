@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/party_game_models.dart';
+import '../../services/game_audio_service.dart';
 import '../../services/preferences_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/celebration_overlay.dart';
+import '../../widgets/interactive_3d_card.dart';
+import '../../widgets/arcade_3d_buzzer.dart';
 
 enum SpyfallGameState { setup, passDevice, discussion, gameOver }
 
@@ -132,14 +136,19 @@ class _SpyfallScreenState extends State<SpyfallScreen> {
     });
   }
 
-  void _endGame({required String title, required String detail}) {
+  void _endGame({required String title, required String detail}) async {
     _discussionTimer?.cancel();
     PreferencesService.triggerHaptic(AppHapticType.heavy);
+    GameAudioService().playWin();
+    await PreferencesService.recordPartyGameFinished(pointsEarned: 20);
     setState(() {
       _gameState = SpyfallGameState.gameOver;
       _gameResultTitle = title;
       _gameResultDetail = detail;
     });
+    if (mounted) {
+      CelebrationOverlay.show(context);
+    }
   }
 
   void _showSpyGuessDialog() {
@@ -400,20 +409,12 @@ class _SpyfallScreenState extends State<SpyfallScreen> {
             ],
           ),
           const Spacer(),
-          SizedBox(
+          Arcade3DBuzzer(
+            label: 'بدء توزيع الأدوار السرية 🎭',
+            icon: Icons.play_arrow_rounded,
+            color: AppColors.purple,
             height: 54,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.purple,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              onPressed: _startGame,
-              icon: const Icon(Icons.play_arrow_rounded, size: 28),
-              label: const Text(
-                'بدء توزيع الأدوار السرية 🎭',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
+            onPressed: _startGame,
           ),
         ],
       ),
@@ -447,14 +448,16 @@ class _SpyfallScreenState extends State<SpyfallScreen> {
               ),
             ),
             const SizedBox(height: 28),
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
+            Interactive3DCard(
+              borderRadius: BorderRadius.circular(24),
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
                     if (!_isSecretRevealed) ...[
                       const Icon(Icons.visibility_off_rounded, size: 64, color: AppColors.purple),
                       const SizedBox(height: 16),
@@ -543,7 +546,8 @@ class _SpyfallScreenState extends State<SpyfallScreen> {
                 ),
               ),
             ),
-          ],
+          ),
+        ],
         ),
       ),
     );

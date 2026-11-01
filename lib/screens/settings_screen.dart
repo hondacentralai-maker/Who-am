@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/game_audio_service.dart';
 import '../services/preferences_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
@@ -32,22 +33,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _toggleDarkMode(bool v) async {
     setState(() => _darkMode = v);
     await PreferencesService.setDarkMode(v);
+    PreferencesService.triggerHaptic(AppHapticType.selection);
     widget.onThemeChanged();
   }
 
   void _toggleReducedMotion(bool v) async {
     setState(() => _reducedMotion = v);
     await PreferencesService.setReducedMotion(v);
+    PreferencesService.triggerHaptic(AppHapticType.selection);
   }
 
   void _toggleSound(bool v) async {
     setState(() => _soundEnabled = v);
     await PreferencesService.setSoundEnabled(v);
+    GameAudioService().isSoundEnabled = v;
+    if (v) {
+      GameAudioService().playTap();
+      PreferencesService.triggerHaptic(AppHapticType.light);
+    }
   }
 
   void _setFontScale(double v) async {
     setState(() => _fontScale = v);
     await PreferencesService.setFontScale(v);
+    PreferencesService.triggerHaptic(AppHapticType.selection);
     widget.onThemeChanged();
   }
 
@@ -312,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 24),
             const Center(
               child: Text(
-                'نسخة 1.0.0 • صُنع بحب للأزواج في العالم العربي 💜',
+                'نسخة 1.9.0 • صُنع بحب للأزواج في العالم العربي 💜',
                 style: TextStyle(color: AppColors.muted, fontSize: 11),
               ),
             ),

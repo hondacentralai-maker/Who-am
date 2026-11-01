@@ -303,3 +303,397 @@ class WouldYouRatherPrompt {
     ];
   }
 }
+
+// ─── 7. Feen El So2al («فين السؤال؟» - مستوحاة من فكرة Meego Studios) ───
+class FeenElSo2alPrompt {
+  final String id;
+  final String answer; // الإجابة الظاهرة
+  final String correctQuestion; // السؤال المخفي الحقيقي
+  final List<String> wrongQuestions; // أسئلة تمويهية
+  final String category;
+  final String emoji;
+
+  const FeenElSo2alPrompt({
+    required this.id,
+    required this.answer,
+    required this.correctQuestion,
+    required this.wrongQuestions,
+    required this.category,
+    this.emoji = '❓',
+  });
+
+  List<String> get allOptions {
+    final list = [correctQuestion, ...wrongQuestions];
+    list.shuffle();
+    return list;
+  }
+
+  static List<FeenElSo2alPrompt> defaultPrompts() {
+    return [
+      const FeenElSo2alPrompt(
+        id: 'fes_1',
+        answer: '«عملت نفسي نايم عشان محدش يطلب مني أنزل أجيب عيش أو أرمي الزبالة!» 😴',
+        correctQuestion: 'إيه أكبر حركة كسل عملتها في بيتك الأسبوع ده؟',
+        wrongQuestions: [
+          'إيه أكتر موقف نمت فيه بدون قصد في الشارع؟',
+          'بتعمل إيه لما يدخل عليك حرامي في البيت؟',
+          'إيه اللي بتعمله لما يجيلك ضيوف دمهم تقيل؟',
+        ],
+        category: 'كسل ومواقف',
+        emoji: '🛌',
+      ),
+      const FeenElSo2alPrompt(
+        id: 'fes_2',
+        answer: '«صرفت كل الفلوس اللي كانت معايا على أكلة مكنتش مستاهلة ربع تمنها!» 💸',
+        correctQuestion: 'إيه أكتر قرار مالي عشوائي ندمت عليه فوراً؟',
+        wrongQuestions: [
+          'إيه أحسن استثمار عملته في حياتك؟',
+          'بتعمل إيه لو كسبت في مسابقة مليون جنيه؟',
+          'إيه الحاجة اللي بتشتريها أول ما تقبض المرتب؟',
+        ],
+        category: 'فلوس وشوبينج',
+        emoji: '🍔',
+      ),
+      const FeenElSo2alPrompt(
+        id: 'fes_3',
+        answer: '«اتصلت بماما واشتكيتلها وفضلت أعيط نص ساعة كأني طفل صغير!» 🥺',
+        correctQuestion: 'بتعمل إيه لما تحس إن الدنيا قفلت في وشك ومحدش فاهمك؟',
+        wrongQuestions: [
+          'إيه أسوأ دراما عملتها عشان تتهرب من الشغل؟',
+          'إزاي بتصالح أعز صديق ليك لما يزعل منك؟',
+          'إيه الموقف اللي خلاك تضحك لحد ما عيونك دمعت؟',
+        ],
+        category: 'مشاعر وفضفضة',
+        emoji: '📞',
+      ),
+      const FeenElSo2alPrompt(
+        id: 'fes_4',
+        answer: '«فتحت الموبايل وعملت نفسي بكلم حد مهم عشان مأسلمش على حد شفته في الشارع!» 📱',
+        correctQuestion: 'إيه أكتر تصرف محرج عملته عشان تتفادى تقابل شخص تعرفه؟',
+        wrongQuestions: [
+          'إيه أكتر مكالمة غيرت مجرى حياتك؟',
+          'إزاي بتتصرف لما موبايلك يرن في عز صلاة الجمعة؟',
+          'بتعمل إيه لو نسيت باسورد موبايلك؟',
+        ],
+        category: 'مواقف محرجة',
+        emoji: '🕶️',
+      ),
+      const FeenElSo2alPrompt(
+        id: 'fes_5',
+        answer: '«قلتله تحفة ولايق عليك جداً.. مع إنه كان كارثة حقيقية!» 👗',
+        correctQuestion: 'إيه أكبر كذبة بيضا ومجاملة مجبر عليها قلتها لصاحبك؟',
+        wrongQuestions: [
+          'إيه أكتر نصيحة صادقة قلتها في وش حد وندمت؟',
+          'رأيك إيه في الموضة والأزياء السنادي؟',
+          'بتتصرف إزاي لو حد سرق منك فكرتك؟',
+        ],
+        category: 'صداقة ومجاملات',
+        emoji: '💅',
+      ),
+      const FeenElSo2alPrompt(
+        id: 'fes_6',
+        answer: '«أكلت نص صينية البشاميل لوحدي بالليل ومسحت أثر الجريمة بالمنديل!» 😋',
+        correctQuestion: 'إيه أكبر جريمة مطبخ نص الليل عملتها ومحدش عرفها؟',
+        wrongQuestions: [
+          'إيه الأكلة اللي لو اتعرضت عليك ترفضها فوراً؟',
+          'إيه سر أحلى وصفة بتعرف تعملها؟',
+          'إيه أكتر حاجة دايماً بتنساها في السوبرماركت؟',
+        ],
+        category: 'جرائم التلاجة',
+        emoji: '🍲',
+      ),
+    ];
+  }
+}
+
+// ─── 8. Besaraha & Wal3a («بصراحة وتحديات ولعة») ────────────────
+enum BesarahaWal3aType { saraha, dare, luck }
+
+class BesarahaWal3aCard {
+  final String id;
+  final BesarahaWal3aType type;
+  final String title;
+  final String content;
+  final String category;
+  final int points;
+  final String emoji;
+
+  const BesarahaWal3aCard({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.content,
+    required this.category,
+    required this.points,
+    required this.emoji,
+  });
+
+  static List<BesarahaWal3aCard> defaultCards() {
+    return [
+      // بصراحة (Saraha)
+      const BesarahaWal3aCard(
+        id: 'bw_1',
+        type: BesarahaWal3aType.saraha,
+        title: 'بصراحة 💬',
+        content: 'إيه الشيء اللي كل الناس بتمدحه فيك وأنت من جواك حاسس إنه مش حقيقي ومبالغ فيه؟',
+        category: 'اعتراف',
+        points: 10,
+        emoji: '🎭',
+      ),
+      const BesarahaWal3aCard(
+        id: 'bw_2',
+        type: BesarahaWal3aType.saraha,
+        title: 'بصراحة 💬',
+        content: 'مين أكتر شخص في الجلسة دي بتحس إنك لو وقعت في مشكلة كبيرة هتتصل بيه أول واحد وليه؟',
+        category: 'ثقة',
+        points: 10,
+        emoji: '🤝',
+      ),
+      const BesarahaWal3aCard(
+        id: 'bw_3',
+        type: BesarahaWal3aType.saraha,
+        title: 'بصراحة 💬',
+        content: 'إيه أكتر موقف حسيت فيه بالغيرة أو المقارنة من حد قريب منك بدون ما تصارحه؟',
+        category: 'مشاعر',
+        points: 15,
+        emoji: '👀',
+      ),
+
+      // ولعة وأحكام (Dare)
+      const BesarahaWal3aCard(
+        id: 'bw_4',
+        type: BesarahaWal3aType.dare,
+        title: 'حكم ولعة 🔥',
+        content: 'اتصل بحد عشوائي من جهات اتصالك وقوله «أنا آسف على اللي حصل زمان» واقفل الخط فوراً بدون تفسير!',
+        category: 'جرأة وتحدي',
+        points: 20,
+        emoji: '🔥',
+      ),
+      const BesarahaWal3aCard(
+        id: 'bw_5',
+        type: BesarahaWal3aType.dare,
+        title: 'حكم ولعة 🔥',
+        content: 'تكلم بلهجة غريبة (خليجي أو شامي أو صعيدي) طول الدائرتين الجايين، وكل كلمة فصحى تخصم نقطة!',
+        category: 'تمثيل ومرح',
+        points: 15,
+        emoji: '🎬',
+      ),
+      const BesarahaWal3aCard(
+        id: 'bw_6',
+        type: BesarahaWal3aType.dare,
+        title: 'حكم ولعة 🔥',
+        content: 'سلم موبايلك للشخص اللي على يمينك يختار صورة من معرض الصور ويعرضها على كل الجالسين!',
+        category: 'مخاطرة كبرى',
+        points: 25,
+        emoji: '📸',
+      ),
+
+      // كروت الحظ (Luck)
+      const BesarahaWal3aCard(
+        id: 'bw_7',
+        type: BesarahaWal3aType.luck,
+        title: 'كرت حظ: إعفاء كامل! 🛡️',
+        content: 'مبروك! كرت درع الحماية، احتفظ بيه واستخدمه للإعفاء من أي حكم قادم أو مرره لشخص تاني.',
+        category: 'حظ ومفاجآت',
+        points: 10,
+        emoji: '🌟',
+      ),
+      const BesarahaWal3aCard(
+        id: 'bw_8',
+        type: BesarahaWal3aType.luck,
+        title: 'كرت حظ: حكم مضاعف! ⚡',
+        content: 'يا ويلك! اختار لاعب يشاركك الحكم القادم أو نفذ التحدي القادم بنقاط مضاعفة x2!',
+        category: 'حظ ناري',
+        points: 5,
+        emoji: '⚡',
+      ),
+    ];
+  }
+}
+
+// ─── 9. Family Stories («حكاوي العيلة والذكريات») ───────────────
+class FamilyStoriesPrompt {
+  final String id;
+  final String topic;
+  final String question;
+  final String subtext;
+  final String category;
+  final String emoji;
+
+  const FamilyStoriesPrompt({
+    required this.id,
+    required this.topic,
+    required this.question,
+    required this.subtext,
+    required this.category,
+    this.emoji = '🏡',
+  });
+
+  static List<FamilyStoriesPrompt> defaultPrompts() {
+    return [
+      const FamilyStoriesPrompt(
+        id: 'fam_1',
+        topic: 'أيام الطفولة والشيطنة 🧒',
+        question: 'مين أكتر واحد في العيلة كان بيعمل مصايب في طفولته ويلبسها في إخواته؟ احكوا أكبر مصيبة!',
+        subtext: 'كل واحد من الكبار يقول شهادته على الواقعة الشهيرة.',
+        category: 'ذكريات',
+        emoji: '🏃‍♂️',
+      ),
+      const FamilyStoriesPrompt(
+        id: 'fam_2',
+        topic: 'أكلات ومطبخ زمان 🍲',
+        question: 'إيه الأكلة أو الحلو اللي لما بيتعمل في بيت العيلة بتفتكروا بيه لِمة زمان وريحة الحبايب؟',
+        subtext: 'شاركوا الوصفة أو الموقف المرتبط بيها.',
+        category: 'بركة ولمة',
+        emoji: '🥘',
+      ),
+      const FamilyStoriesPrompt(
+        id: 'fam_3',
+        topic: 'أول عربية وأول سفرية 🚗',
+        question: 'احكوا حكاية أول مصيف أو سفرية عائلية بالعربية ومين اللي كان بيتخانق على الشباك!',
+        subtext: 'مواقف المصايف الكوميدية على البحر ومحطات البنزين.',
+        category: 'سفر عائلي',
+        emoji: '🏖️',
+      ),
+      const FamilyStoriesPrompt(
+        id: 'fam_4',
+        topic: 'حكم ومواقف الأجداد 👴👵',
+        question: 'إيه أكتر نصيحة أو مثل كان الجد أو الجدة دايماً بيكرروه ولسه بيرن في ودانكم لحد النهاردة؟',
+        subtext: 'دعوة وترحم وذكرى طيبة لبركة العيلة.',
+        category: 'أصول وحكمة',
+        emoji: '🤍',
+      ),
+      const FamilyStoriesPrompt(
+        id: 'fam_5',
+        topic: 'سر محدش كان يعرفه! 🤫',
+        question: 'إيه المقلب أو الكذبة الصغيرة اللي عملتوها زمان في البيت وأهاليكم لسه ميعرفوش حقيقتها لحد دلوقتي؟',
+        subtext: 'حان وقت كشف المستور بما إن عدى عليها سنين!',
+        category: 'اعترافات',
+        emoji: '🔍',
+      ),
+    ];
+  }
+}
+
+// ─── 10. Girls Lakin («جلسات البنات - Girls ولكن») ──────────────
+class GirlsLakinPrompt {
+  final String id;
+  final String situation;
+  final String challenge;
+  final String category;
+  final String emoji;
+
+  const GirlsLakinPrompt({
+    required this.id,
+    required this.situation,
+    required this.challenge,
+    required this.category,
+    this.emoji = '💅',
+  });
+
+  static List<GirlsLakinPrompt> defaultPrompts() {
+    return [
+      const GirlsLakinPrompt(
+        id: 'gl_1',
+        situation: 'لقيتي صديقتك خارجة بلبس ألوانه مش راكبة على بعض ومتحمسة جداً..',
+        challenge: 'هتصدميها بالحقيقة في ساعتها عشان تلحق تغير ولا هتمدحيها عشان متكسفيهاش؟',
+        category: 'ستايل وصراحة',
+        emoji: '👗',
+      ),
+      const GirlsLakinPrompt(
+        id: 'gl_2',
+        situation: 'جلسة سهرانين وطلبتوا دايت بس جه الكريب بالنوتيلا والببلز قدامكم..',
+        challenge: 'مين أول واحدة هتقول «الدايت بيبدأ من السبت الجاي» وتهجم على الأكل؟',
+        category: 'أكل ومزاج',
+        emoji: '🍫',
+      ),
+      const GirlsLakinPrompt(
+        id: 'gl_3',
+        situation: 'فويس نوت مدته 8 دقائق من واحدة صاحبتكم فيها حوار كبير..',
+        challenge: 'مين اللي بتسمعه على سرعة 2x ومين اللي بتعمل نفسها سمعته وتكتب «يا لهوي بجد؟»!',
+        category: 'سوشيال ورغي',
+        emoji: '🎙️',
+      ),
+      const GirlsLakinPrompt(
+        id: 'gl_4',
+        situation: 'تحدي حقيبة اليد: طلعي أغرب حاجة موجودة في شنطتك دلوقتي حالاً!',
+        challenge: 'صاحبة أغرب أو أقدم حاجة (روج قديم، فاتورة من 2022، بنسة شعر ضايعة) تكسب!',
+        category: 'تحدي لحظي',
+        emoji: '👜',
+      ),
+      const GirlsLakinPrompt(
+        id: 'gl_5',
+        situation: 'مين أكتر واحدة لو اتعصبت بتقلب المحادثة لتحقيق بوليسي وتجيب تواريخ وسكرين شوتس؟',
+        challenge: 'تصويت سريع من الصديقات مع ذكر مثال شهير!',
+        category: 'تحريات بنات',
+        emoji: '🕵️‍♀️',
+      ),
+    ];
+  }
+}
+
+// ─── 11. Hatrick («هاتريك - تحدي وأسئلة كروية») ─────────────────
+class HatrickPrompt {
+  final String id;
+  final String question;
+  final String answer;
+  final String category;
+  final String emoji;
+
+  const HatrickPrompt({
+    required this.id,
+    required this.question,
+    required this.answer,
+    required this.category,
+    this.emoji = '⚽',
+  });
+
+  static List<HatrickPrompt> defaultPrompts() {
+    return [
+      const HatrickPrompt(
+        id: 'ht_1',
+        question: 'مين اللاعب المصري الوحيد اللي فاز بجائزة أفضل لاعب في إفريقيا مرتين متتاليتين في العصر الحديث؟',
+        answer: 'محمد صلاح (2017 و 2018) 👑',
+        category: 'نجوم مصر',
+        emoji: '🇪🇬',
+      ),
+      const HatrickPrompt(
+        id: 'ht_2',
+        question: 'مين الفريق صاحب الرقم القياسي في الفوز بلقب دوري أبطال إفريقيا عبر التاريخ؟',
+        answer: 'النادي الأهلي المصري 🦅 (12 لقب)',
+        category: 'بطولات إفريقية',
+        emoji: '🏆',
+      ),
+      const HatrickPrompt(
+        id: 'ht_3',
+        question: 'في أي دولة أقيمت بطولة كأس العالم 2022، ومين كان بطل تلك النسخة؟',
+        answer: 'قطر 🇶🇦، والبطل الأرجنتين 🇦🇷 بقيادة ميسي',
+        category: 'كأس العالم',
+        emoji: '🌍',
+      ),
+      const HatrickPrompt(
+        id: 'ht_4',
+        question: 'مين هو الهداف التاريخي لبطولة دوري أبطال أوروبا على مر العصور؟',
+        answer: 'كريستيانو رونالدو (140 هدفاً) 🐐',
+        category: 'دوري الأبطال',
+        emoji: '⭐',
+      ),
+      const HatrickPrompt(
+        id: 'ht_5',
+        question: 'مين النادي الإسباني صاحب أكبر عدد ألقاب في الدوري الإسباني (الليغا)؟',
+        answer: 'ريال مدريد 👑',
+        category: 'الدوريات الأوروبية',
+        emoji: '🇪🇸',
+      ),
+      const HatrickPrompt(
+        id: 'ht_6',
+        question: 'تحدي هاتريك سريع: اذكر 3 لاعبين مصريين احترفوا في الدوري الإنجليزي الممتاز (البريميرليج)!',
+        answer: 'أمثلة: محمد صلاح، أحمد حسام ميدو، محمد النني، عمرو زكي، حسام غالي...',
+        category: 'تحدي سرعة',
+        emoji: '⚡',
+      ),
+    ];
+  }
+}
+
+

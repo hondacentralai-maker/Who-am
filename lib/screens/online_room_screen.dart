@@ -14,6 +14,8 @@ import '../theme/app_theme.dart';
 import 'auth_screen.dart';
 import 'partner_link_dialog.dart';
 import 'party_games_hub_screen.dart';
+import '../theme/page_transitions.dart';
+import 'party_games/jackaroo_3d_screen.dart';
 
 class OnlineRoomScreen extends StatefulWidget {
   const OnlineRoomScreen({super.key});
@@ -1999,6 +2001,21 @@ class _ActiveOnlineRoomScreenState extends State<ActiveOnlineRoomScreen> {
       appBar: AppBar(
         title: Text('غرفة: ${widget.roomCode}'),
         actions: [
+          IconButton(
+            tooltip: 'تشغيل جاكارو 3D 🎲',
+            icon: const Icon(Icons.view_in_ar_rounded, color: AppColors.accentGold),
+            onPressed: () {
+              Navigator.push(
+                context,
+                Perspective3DPageRoute(
+                  builder: (_) => Jackaroo3DScreen(
+                    isOnline: true,
+                    roomId: widget.roomCode,
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'دعوة مباشرة للشريك المرتبط 📲',
             icon: const Icon(Icons.send_to_mobile_rounded),

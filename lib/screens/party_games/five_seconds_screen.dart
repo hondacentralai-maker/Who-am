@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/party_game_models.dart';
+import '../../services/game_audio_service.dart';
 import '../../services/preferences_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/interactive_3d_card.dart';
+import '../../widgets/arcade_3d_buzzer.dart';
 
 class FiveSecondsScreen extends StatefulWidget {
   final List<String>? initialPlayers;
@@ -88,6 +91,7 @@ class _FiveSecondsScreenState extends State<FiveSecondsScreen>
         });
         _animController.forward(from: 0.0);
         PreferencesService.triggerHaptic(AppHapticType.medium);
+        GameAudioService().playTick();
       } else {
         timer.cancel();
         setState(() {
@@ -97,33 +101,41 @@ class _FiveSecondsScreenState extends State<FiveSecondsScreen>
         });
         _animController.forward(from: 0.0);
         PreferencesService.triggerHaptic(AppHapticType.heavy);
+        GameAudioService().playBuzzer();
       }
     });
   }
 
-  void _recordResult({required bool success}) {
+  void _recordResult({required bool success}) async {
     _timer?.cancel();
     final currentPlayer = _players[_currentPlayerIndex];
 
     if (success) {
       _scores[currentPlayer] = (_scores[currentPlayer] ?? 0) + 1;
       PreferencesService.triggerHaptic(AppHapticType.medium);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          duration: const Duration(milliseconds: 1200),
-          backgroundColor: const Color(0xFF2E7D32),
-          content: Text('أحسنتِ يا $currentPlayer! 🎉 +1 نقطة'),
-        ),
-      );
+      GameAudioService().playSuccess();
+      await PreferencesService.recordPartyGameFinished(pointsEarned: 10);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(milliseconds: 1200),
+            backgroundColor: const Color(0xFF2E7D32),
+            content: Text('أحسنتِ يا $currentPlayer! 🎉 +10 نقاط'),
+          ),
+        );
+      }
     } else {
       PreferencesService.triggerHaptic(AppHapticType.light);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          duration: const Duration(milliseconds: 1200),
-          backgroundColor: Colors.redAccent,
-          content: Text('حظ أوفر في الجولة القادمة يا $currentPlayer! ⌛'),
-        ),
-      );
+      GameAudioService().playBuzzer();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(milliseconds: 1200),
+            backgroundColor: Colors.redAccent,
+            content: Text('حظ أوفر في الجولة القادمة يا $currentPlayer! ⌛'),
+          ),
+        );
+      }
     }
 
     setState(() {
@@ -287,12 +299,14 @@ class _FiveSecondsScreenState extends State<FiveSecondsScreen>
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
-                  child: Card(
-                    elevation: 6,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: SingleChildScrollView(
+                  child: Interactive3DCard(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Card(
+                      elevation: 6,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      child: SingleChildScrollView(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -374,6 +388,7 @@ class _FiveSecondsScreenState extends State<FiveSecondsScreen>
                 ),
               ),
             ),
+            ),
 
             // Controls
             Container(
@@ -391,65 +406,33 @@ class _FiveSecondsScreenState extends State<FiveSecondsScreen>
               child: Column(
                 children: [
                   if (!_isRunning && !_hasFinished) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.purple,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        onPressed: _startTimer,
-                        icon: const Icon(Icons.play_arrow_rounded, size: 28),
-                        label: const Text(
-                          'ابدأ الـ 5 ثواني الآن! ⚡',
-                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                        ),
-                      ),
+                    Arcade3DBuzzer(
+                      label: 'ابدأ الـ 5 ثواني الآن! ⚡',
+                      icon: Icons.bolt_rounded,
+                      color: AppColors.purple,
+                      height: 52,
+                      onPressed: _startTimer,
                     ),
                   ] else ...[
                     Row(
                       children: [
                         Expanded(
-                          child: SizedBox(
-                            height: 52,
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.redAccent,
-                                side: const BorderSide(color: Colors.redAccent, width: 2),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              onPressed: () => _recordResult(success: false),
-                              icon: const Icon(Icons.close_rounded),
-                              label: const Text(
-                                'لم تجب / تعثرت',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
+                          child: Arcade3DBuzzer(
+                            label: 'لم تجب / تعثرت',
+                            icon: Icons.close_rounded,
+                            color: const Color(0xFFC62828),
+                            height: 48,
+                            onPressed: () => _recordResult(success: false),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: SizedBox(
-                            height: 52,
-                            child: FilledButton.icon(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF2E7D32),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              onPressed: () => _recordResult(success: true),
-                              icon: const Icon(Icons.check_rounded),
-                              label: const Text(
-                                'أجابت بنجاح! (+1)',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
+                          child: Arcade3DBuzzer(
+                            label: 'أجابت بنجاح! (+1)',
+                            icon: Icons.check_rounded,
+                            color: const Color(0xFF2E7D32),
+                            height: 48,
+                            onPressed: () => _recordResult(success: true),
                           ),
                         ),
                       ],

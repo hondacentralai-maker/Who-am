@@ -1,7 +1,7 @@
 name: arabic_couples_game
 description: لعبة عربية للأزواج مع وضع خمن الشخصية بملامح عربية.
 publish_to: 'none'
-version: 1.5.0+5
+version: 1.9.0+9
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -17,6 +17,7 @@ dependencies:
   supabase_flutter: ^2.18.3
   google_fonts: ^8.2.1
   flutter_animate: ^4.5.2
+  audioplayers: ^6.7.1
 
 dev_dependencies:
   flutter_test:

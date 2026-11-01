@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/know_me_question.dart';
+import '../services/game_audio_service.dart';
 import '../services/game_data_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/interactive_3d_card.dart';
 import 'online_room_screen.dart';
 import 'pass_device_screen.dart';
 
@@ -86,6 +88,13 @@ class _KnowMeScreenState extends State<KnowMeScreen> {
     setState(() {
       _roundPoints += points;
     });
+
+    PreferencesService.triggerHaptic(isMatch ? AppHapticType.heavy : AppHapticType.medium);
+    if (isMatch) {
+      GameAudioService().playSuccess();
+    } else {
+      GameAudioService().playCardPlace();
+    }
 
     await PreferencesService.recordGameFinished(
       isKnowMe: true,
@@ -280,55 +289,58 @@ class _KnowMeScreenState extends State<KnowMeScreen> {
                         const SizedBox(height: 18),
 
                         // Question Card
-                        Container(
-                          padding: const EdgeInsets.all(22),
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: AppShadows.cardShadow,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(14),
+                        Interactive3DCard(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Container(
+                            padding: const EdgeInsets.all(22),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.primaryGradient,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: AppShadows.cardShadow,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Text(
+                                    _currentQuestion!.category,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
-                                child: Text(
-                                  _currentQuestion!.category,
+                                const SizedBox(height: 16),
+                                Text(
+                                  _currentQuestion!.question,
+                                  textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 21,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.5,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _currentQuestion!.question,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 21,
-                                  fontWeight: FontWeight.w900,
-                                  height: 1.5,
-                                ),
-                              ),
-                              if (_currentQuestion!.hint.isNotEmpty) ...[
-                                const SizedBox(height: 12),
-                                Text(
-                                  '💡 تلميح: ${_currentQuestion!.hint}',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.85),
-                                    fontSize: 13,
+                                if (_currentQuestion!.hint.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    '💡 تلميح: ${_currentQuestion!.hint}',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                      fontSize: 13,
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),

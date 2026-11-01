@@ -3,6 +3,9 @@ import '../models/couples_card.dart';
 import '../services/game_data_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import '../services/game_audio_service.dart';
+import '../widgets/celebration_overlay.dart';
+import '../widgets/interactive_3d_card.dart';
 import 'pass_device_screen.dart';
 
 class ExtraGamesScreen extends StatefulWidget {
@@ -227,7 +230,7 @@ class _ExtraGamesScreenState extends State<ExtraGamesScreen> {
 // ─── 1. Daily Question Screen ────────────────────────────
 class DailyQuestionDetailScreen extends StatelessWidget {
   final String question;
-  const DailyQuestionDetailScreen({super.key, required this.question});
+  const DailyQuestionDetailScreen({super.key, this.question = 'وش شيء بسيط يسعدك اليوم؟'});
 
   @override
   Widget build(BuildContext context) {
@@ -253,20 +256,26 @@ class DailyQuestionDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(26),
-                decoration: BoxDecoration(
-                  color: AppColors.palePurple,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Text(
-                  question,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.deepPurple,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    height: 1.6,
+              Interactive3DCard(
+                borderRadius: BorderRadius.circular(24),
+                maxTiltAngle: 0.20,
+                enableGlare: true,
+                child: Container(
+                  padding: const EdgeInsets.all(26),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.pinkRoseGradient,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: AppShadows.floatingShadow,
+                  ),
+                  child: Text(
+                    question,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      height: 1.6,
+                    ),
                   ),
                 ),
               ),
@@ -295,7 +304,16 @@ class DailyQuestionDetailScreen extends StatelessWidget {
 // ─── 2. This or That Screen ──────────────────────────────
 class ThisOrThatScreen extends StatefulWidget {
   final List<List<String>> pairs;
-  const ThisOrThatScreen({super.key, required this.pairs});
+  const ThisOrThatScreen({super.key, this.pairs = const [
+    ['قهوة ☕', 'شاي 🍵'],
+    ['البحر 🌊', 'الجبل ⛰️'],
+    ['سهرة في البيت 🏠', 'طلعة عفوية 🚗'],
+    ['تخطيط مسبق 📅', 'مفاجأة 🎁'],
+    ['فيلم كوميدي 😂', 'فيلم مغامرات 🧭'],
+    ['رسالة 💌', 'مكالمة 📞'],
+    ['فطور متأخر 🥞', 'عشاء هادئ 🍽️'],
+    ['سفر ✈️', 'استكشاف مكان قريب 🚶'],
+  ]});
 
   @override
   State<ThisOrThatScreen> createState() => _ThisOrThatScreenState();
@@ -365,30 +383,46 @@ class _ThisOrThatScreenState extends State<ThisOrThatScreen> {
   }
 
   Widget _buildChoiceButton(String text) {
-    return SizedBox(
-      height: 70,
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.purple, width: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+    return Interactive3DCard(
+      borderRadius: BorderRadius.circular(22),
+      maxTiltAngle: 0.14,
+      enableGlare: true,
+      child: Container(
+        height: 72,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.purple.withValues(alpha: 0.6), width: 2),
+          boxShadow: AppShadows.cardShadow,
         ),
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('اختيار رائع: $text 💜'),
-              duration: const Duration(seconds: 1),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(22),
+            onTap: () {
+              PreferencesService.triggerHaptic(AppHapticType.selection);
+              GameAudioService().playTap();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('اختيار رائع: $text 💖'),
+                  duration: const Duration(milliseconds: 900),
+                ),
+              );
+              Future.delayed(const Duration(milliseconds: 250), () {
+                if (mounted) _next();
+              });
+            },
+            child: Center(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.deepPurple,
+                ),
+              ),
             ),
-          );
-          _next();
-        },
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: AppColors.deepPurple,
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
           ),
         ),
       ),
@@ -438,6 +472,9 @@ class _GuessMyAnswerScreenState extends State<GuessMyAnswerScreen> {
   }
 
   void _onPlayer2Submitted() {
+    PreferencesService.triggerHaptic(AppHapticType.heavy);
+    GameAudioService().playSuccess();
+    CelebrationOverlay.show(context);
     setState(() => _step = 2);
   }
 
@@ -534,13 +571,17 @@ class _GuessMyAnswerScreenState extends State<GuessMyAnswerScreen> {
                   child: const Text('كشف الإجابات ومقارنتها 🎉'),
                 ),
               ] else ...[
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: AppDecorations.outlinedCard(),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'إجابة اللاعب 1 الأصلية:',
+                Interactive3DCard(
+                  borderRadius: BorderRadius.circular(22),
+                  maxTiltAngle: 0.16,
+                  enableGlare: true,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: AppDecorations.outlinedCard(),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'إجابة اللاعب 1 الأصلية:',
                         style: TextStyle(color: AppColors.muted, fontSize: 13),
                       ),
                       const SizedBox(height: 6),
@@ -569,6 +610,7 @@ class _GuessMyAnswerScreenState extends State<GuessMyAnswerScreen> {
                     ],
                   ),
                 ),
+              ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
                   onPressed: _restart,

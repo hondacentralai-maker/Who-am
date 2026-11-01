@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/party_game_models.dart';
+import '../../services/game_audio_service.dart';
 import '../../services/preferences_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/celebration_overlay.dart';
+import '../../widgets/interactive_3d_card.dart';
+import '../../widgets/arcade_3d_buzzer.dart';
 
 class TabooScreen extends StatefulWidget {
   const TabooScreen({super.key});
@@ -60,20 +64,30 @@ class _TabooScreenState extends State<TabooScreen> {
         setState(() {
           _remainingSeconds--;
         });
+        if (_remainingSeconds <= 5 && _remainingSeconds > 0) {
+          GameAudioService().playTick();
+          PreferencesService.triggerHaptic(AppHapticType.selection);
+        }
       } else {
         timer.cancel();
         PreferencesService.triggerHaptic(AppHapticType.heavy);
+        GameAudioService().playBuzzer();
         setState(() {
           _isPlaying = false;
           _isRoundOver = true;
         });
+        if (mounted) {
+          CelebrationOverlay.show(context);
+        }
       }
     });
   }
 
-  void _onCorrect() {
+  void _onCorrect() async {
     if (!_isPlaying) return;
     PreferencesService.triggerHaptic(AppHapticType.medium);
+    GameAudioService().playSuccess();
+    await PreferencesService.recordPartyGameFinished(pointsEarned: 10);
     setState(() {
       if (_activeTeam == 1) {
         _teamAScore++;
@@ -87,6 +101,7 @@ class _TabooScreenState extends State<TabooScreen> {
   void _onTabooPenalty() {
     if (!_isPlaying) return;
     PreferencesService.triggerHaptic(AppHapticType.heavy);
+    GameAudioService().playBuzzer();
     setState(() {
       if (_activeTeam == 1) {
         if (_teamAScore > 0) _teamAScore--;
@@ -107,6 +122,7 @@ class _TabooScreenState extends State<TabooScreen> {
   void _onSkip() {
     if (!_isPlaying) return;
     PreferencesService.triggerHaptic(AppHapticType.light);
+    GameAudioService().playCardPlace();
     setState(() {
       _nextCard();
     });
@@ -270,20 +286,14 @@ class _TabooScreenState extends State<TabooScreen> {
                 ),
                 child: Row(
                   children: [
-                    // Taboo penalty button
+                    // Taboo penalty button (3D Arcade style)
                     Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.redAccent,
-                            side: const BorderSide(color: Colors.redAccent, width: 2),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          onPressed: _onTabooPenalty,
-                          icon: const Icon(Icons.block_rounded),
-                          label: const Text('محظور! (-1)', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
+                      child: Arcade3DBuzzer(
+                        label: 'محظور! (-1)',
+                        icon: Icons.block_rounded,
+                        color: const Color(0xFFC62828),
+                        height: 48,
+                        onPressed: _onTabooPenalty,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -294,19 +304,14 @@ class _TabooScreenState extends State<TabooScreen> {
                       onPressed: _onSkip,
                     ),
                     const SizedBox(width: 8),
-                    // Correct button
+                    // Correct button (3D Arcade style)
                     Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF2E7D32),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          onPressed: _onCorrect,
-                          icon: const Icon(Icons.check_rounded),
-                          label: const Text('صح! (+1)', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
+                      child: Arcade3DBuzzer(
+                        label: 'صح! (+1)',
+                        icon: Icons.check_circle_rounded,
+                        color: const Color(0xFF2E7D32),
+                        height: 48,
+                        onPressed: _onCorrect,
                       ),
                     ),
                   ],
@@ -320,22 +325,33 @@ class _TabooScreenState extends State<TabooScreen> {
   }
 
   Widget _buildCardView(TabooCard card) {
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Target Word Header
+    return Interactive3DCard(
+      borderRadius: BorderRadius.circular(28),
+      maxTiltAngle: 0.20,
+      enableGlare: true,
+      child: Card(
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Target Word Header
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 18),
               decoration: BoxDecoration(
-                color: AppColors.purple,
+                gradient: AppColors.pinkRoseGradient,
                 borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.cardShadowColor,
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
@@ -404,86 +420,97 @@ class _TabooScreenState extends State<TabooScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildReadyCard(String activeTeamName) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('🤐', style: TextStyle(fontSize: 54)),
-            const SizedBox(height: 12),
-            Text(
-              'دور: $activeTeamName',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.deepPurple),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'اشرحي الكلمة الرئيسية لفريقكِ بدون نطق أي من الكلمات المحظورة في البطاقة! لديكم 60 ثانية.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, height: 1.5),
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.purple,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                onPressed: _startRound,
-                icon: const Icon(Icons.play_arrow_rounded, size: 28),
-                label: const Text('ابدأ الجولة (60 ثانية) ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+    return Interactive3DCard(
+      borderRadius: BorderRadius.circular(28),
+      maxTiltAngle: 0.16,
+      enableGlare: true,
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🤐', style: TextStyle(fontSize: 54)),
+              const SizedBox(height: 12),
+              Text(
+                'دور: $activeTeamName',
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.deepPurple),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              const Text(
+                'اشرحي الكلمة الرئيسية لفريقكِ بدون نطق أي من الكلمات المحظورة في البطاقة! لديكم 60 ثانية.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.muted, height: 1.5),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.purple,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: _startRound,
+                  icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                  label: const Text('ابدأ الجولة (60 ثانية) ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildRoundOverCard(String activeTeamName) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('⏰', style: TextStyle(fontSize: 54)),
-            const SizedBox(height: 12),
-            const Text(
-              'انتهت الجولة!',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.deepPurple),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'أحسنتم! والآن حان دور الفريق المنافس لبدء التحدي.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, height: 1.5),
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.purple,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                onPressed: _switchTeam,
-                icon: const Icon(Icons.swap_horiz_rounded),
-                label: const Text('تسليم الجوال للفريق الآخر 🔄', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+    return Interactive3DCard(
+      borderRadius: BorderRadius.circular(28),
+      maxTiltAngle: 0.16,
+      enableGlare: true,
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('⏰', style: TextStyle(fontSize: 54)),
+              const SizedBox(height: 12),
+              const Text(
+                'انتهت الجولة!',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.deepPurple),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              const Text(
+                'أحسنتم! والآن حان دور الفريق المنافس لبدء التحدي.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.muted, height: 1.5),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.purple,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: _switchTeam,
+                  icon: const Icon(Icons.swap_horiz_rounded),
+                  label: const Text('تسليم الجوال للفريق الآخر 🔄', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

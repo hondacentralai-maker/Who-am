@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/love_note.dart';
+import '../services/game_audio_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/celebration_overlay.dart';
+import '../widgets/interactive_3d_card.dart';
 
 class LoveNotesScreen extends StatefulWidget {
   const LoveNotesScreen({super.key});
@@ -207,8 +210,15 @@ class _LoveNotesScreenState extends State<LoveNotesScreen> {
                         emoji: selectedEmoji,
                       );
                       await PreferencesService.addLoveNote(newNote);
+                      await PreferencesService.addPoints(15);
+                      await PreferencesService.unlockAchievement('love_capsule');
+                      GameAudioService().playSuccess();
+                      PreferencesService.triggerHaptic(AppHapticType.heavy);
                       _loadNotes();
-                      if (ctx.mounted) Navigator.pop(ctx);
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx);
+                        CelebrationOverlay.show(context);
+                      }
                     }
                   },
                   icon: const Icon(Icons.send_rounded),
@@ -224,6 +234,8 @@ class _LoveNotesScreenState extends State<LoveNotesScreen> {
 
   void _openNote(LoveNote note) {
     if (note.isLocked) {
+      GameAudioService().playBuzzer();
+      PreferencesService.triggerHaptic(AppHapticType.medium);
       showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -273,6 +285,11 @@ class _LoveNotesScreenState extends State<LoveNotesScreen> {
     }
 
     PreferencesService.markLoveNoteOpened(note.id);
+    PreferencesService.triggerHaptic(AppHapticType.medium);
+    GameAudioService().playWin();
+    if (mounted) {
+      CelebrationOverlay.show(context);
+    }
     _loadNotes();
 
     showDialog<void>(
@@ -432,54 +449,57 @@ class _LoveNotesScreenState extends State<LoveNotesScreen> {
                         final note = notes[idx];
                         final isLocked = note.isLocked;
 
-                        return Container(
+                        return Interactive3DCard(
+                          borderRadius: BorderRadius.circular(20),
                           margin: const EdgeInsets.only(bottom: 12),
-                          decoration: AppDecorations.outlinedCard(),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(14),
-                            leading: Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: isLocked
-                                    ? AppColors.accentGold.withValues(alpha: 0.18)
-                                    : AppColors.palePurple,
-                                borderRadius: BorderRadius.circular(16),
+                          onTap: () => _openNote(note),
+                          child: Container(
+                            decoration: AppDecorations.outlinedCard(),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(14),
+                              leading: Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  color: isLocked
+                                      ? AppColors.accentGold.withValues(alpha: 0.18)
+                                      : AppColors.palePurple,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    isLocked ? '🎁' : note.emoji,
+                                    style: const TextStyle(fontSize: 26),
+                                  ),
+                                ),
                               ),
-                              child: Center(
+                              title: Text(
+                                isLocked ? 'كبسولة زمنية مشوقة...' : note.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4),
                                 child: Text(
-                                  isLocked ? '🎁' : note.emoji,
-                                  style: const TextStyle(fontSize: 26),
+                                  isLocked
+                                      ? 'مغلقة • متبقي ${note.daysUntilUnlock} يوماً للفتح'
+                                      : 'من: ${note.authorName} • انقر للقراءة',
+                                  style: TextStyle(
+                                    color: isLocked ? AppColors.accentGold : AppColors.muted,
+                                    fontSize: 12,
+                                    fontWeight: isLocked ? FontWeight.w700 : FontWeight.normal,
+                                  ),
                                 ),
                               ),
-                            ),
-                            title: Text(
-                              isLocked ? 'كبسولة زمنية مشوقة...' : note.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 16,
-                                color: AppColors.ink,
+                              trailing: Icon(
+                                isLocked ? Icons.lock_rounded : Icons.arrow_back_ios_new_rounded,
+                                size: 18,
+                                color: isLocked ? AppColors.accentGold : AppColors.muted,
                               ),
                             ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                isLocked
-                                    ? 'مغلقة • متبقي ${note.daysUntilUnlock} يوماً للفتح'
-                                    : 'من: ${note.authorName} • انقر للقراءة',
-                                style: TextStyle(
-                                  color: isLocked ? AppColors.accentGold : AppColors.muted,
-                                  fontSize: 12,
-                                  fontWeight: isLocked ? FontWeight.w700 : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                            trailing: Icon(
-                              isLocked ? Icons.lock_rounded : Icons.arrow_back_ios_new_rounded,
-                              size: 18,
-                              color: isLocked ? AppColors.accentGold : AppColors.muted,
-                            ),
-                            onTap: () => _openNote(note),
                           ),
                         );
                       },

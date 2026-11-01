@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../services/game_audio_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
 
@@ -41,13 +42,13 @@ class GlassBottomNav extends StatelessWidget {
             height: 68,
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xDD17122A)
-                  : Colors.white.withValues(alpha: 0.88),
+                  ? const Color(0xDD28182D)
+                  : Colors.white.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: isDark
                     ? AppColors.midnightCardBorder
-                    : Colors.white.withValues(alpha: 0.7),
+                    : AppColors.cardBorder,
                 width: 1.5,
               ),
               boxShadow: isDark
@@ -63,11 +64,11 @@ class GlassBottomNav extends StatelessWidget {
                         offset: const Offset(0, 4),
                       ),
                     ]
-                  : [
+                  : const [
                       BoxShadow(
-                        color: AppColors.deepPurple.withValues(alpha: 0.12),
+                        color: Color(0x1AE94B8A),
                         blurRadius: 24,
-                        offset: const Offset(0, 10),
+                        offset: Offset(0, 8),
                       ),
                     ],
             ),
@@ -82,6 +83,7 @@ class GlassBottomNav extends StatelessWidget {
                     borderRadius: BorderRadius.circular(22),
                     onTap: () {
                       PreferencesService.triggerHaptic(AppHapticType.selection);
+                      GameAudioService().playTap();
                       onTap(index);
                     },
                     child: AnimatedContainer(

@@ -51,16 +51,12 @@ class ShareMomentsDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF5E2B97), Color(0xFF903DD8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0x337047D7),
-                    blurRadius: 16,
+                    color: Color(0x35E94B8A),
+                    blurRadius: 18,
                     offset: Offset(0, 6),
                   ),
                 ],

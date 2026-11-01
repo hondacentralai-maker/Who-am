@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/game_session.dart';
+import '../services/game_audio_service.dart';
 import '../services/game_data_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/celebration_overlay.dart';
+import '../widgets/interactive_3d_card.dart';
 
 class StructuredSessionScreen extends StatefulWidget {
   const StructuredSessionScreen({super.key});
@@ -35,17 +37,24 @@ class _StructuredSessionScreenState extends State<StructuredSessionScreen> {
     }
   }
 
-  void _nextStep() {
+  void _nextStep() async {
     if (_session == null) return;
     setState(() {
       _session!.next();
-      if (_session!.isCompleted) {
-        PreferencesService.recordGamePlay();
-        if (mounted) {
-          CelebrationOverlay.show(context);
-        }
-      }
     });
+
+    if (_session!.isCompleted) {
+      PreferencesService.triggerHaptic(AppHapticType.heavy);
+      GameAudioService().playWin();
+      await PreferencesService.addPoints(25);
+      await PreferencesService.recordGamePlay();
+      if (mounted) {
+        CelebrationOverlay.show(context);
+      }
+    } else {
+      PreferencesService.triggerHaptic(AppHapticType.selection);
+      GameAudioService().playCardPlace();
+    }
   }
 
   void _toggleFavorite(String? cardId) async {
@@ -169,79 +178,84 @@ class _StructuredSessionScreenState extends State<StructuredSessionScreen> {
           // Main Card
           Expanded(
             child: Center(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(26),
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: AppShadows.floatingShadow,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (card != null) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${card.category} • ${card.type}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+              child: Interactive3DCard(
+                borderRadius: BorderRadius.circular(28),
+                maxTiltAngle: 0.20,
+                enableGlare: true,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(26),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: AppShadows.floatingShadow,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (card != null) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '${card.category} • ${card.type}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              isFav ? Icons.bookmark : Icons.bookmark_border,
-                              color: isFav ? AppColors.accentGold : Colors.white,
+                            IconButton(
+                              icon: Icon(
+                                isFav ? Icons.bookmark : Icons.bookmark_border,
+                                color: isFav ? AppColors.accentGold : Colors.white,
+                              ),
+                              onPressed: () => _toggleFavorite(card.id),
+                              tooltip: 'حفظ بالمفضلة',
                             ),
-                            onPressed: () => _toggleFavorite(card.id),
-                            tooltip: 'حفظ بالمفضلة',
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          card.text,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            height: 1.6,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        if (card.purpose.isNotEmpty) ...[
+                          const SizedBox(height: 18),
+                          Text(
+                            card.purpose,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        card.text,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          height: 1.6,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      if (card.purpose.isNotEmpty) ...[
-                        const SizedBox(height: 18),
-                        Text(
-                          card.purpose,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 14,
-                            height: 1.5,
-                          ),
+                      ] else ...[
+                        const Text(
+                          'لا توجد بطاقة لهذه المرحلة',
+                          style: TextStyle(color: Colors.white),
                         ),
                       ],
-                    ] else ...[
-                      const Text(
-                        'لا توجد بطاقة لهذه المرحلة',
-                        style: TextStyle(color: Colors.white),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),

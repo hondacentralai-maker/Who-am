@@ -226,11 +226,7 @@ class _CouplesDaysBannerState extends State<CouplesDaysBanner> {
         decoration: BoxDecoration(
           gradient: isDark
               ? AppColors.midnightAurora
-              : const LinearGradient(
-                  colors: [Color(0xFF5E2B97), Color(0xFF8E37D7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+              : AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(24),
           border: isDark
               ? Border.all(
@@ -249,8 +245,8 @@ class _CouplesDaysBannerState extends State<CouplesDaysBanner> {
                 ]
               : const [
                   BoxShadow(
-                    color: Color(0x337047D7),
-                    blurRadius: 18,
+                    color: Color(0x35E94B8A),
+                    blurRadius: 20,
                     offset: Offset(0, 8),
                   ),
                 ],
