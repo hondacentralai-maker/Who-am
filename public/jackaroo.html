@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>معاينة رقعة جاكارو الواقعية • Jackaroo 96 Holes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Tajawal', sans-serif;
+      user-select: none;
+    }
+    body {
+      background: #0d0f17;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 20px;
+    }
+    header {
+      width: 100%;
+      max-width: 900px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .title-group h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #FFD700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .title-group p {
+      font-size: 12px;
+      color: #9ea7b3;
+    }
+    .badge {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      color: #000;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .controls-bar {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 18px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: rgba(255, 215, 0, 0.2);
+      border-color: #FFD700;
+      color: #FFD700;
+    }
+    .btn.active {
+      background: #FFD700;
+      color: #000;
+      border-color: #FFD700;
+    }
+    .status-pill {
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 215, 0, 0.4);
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #fff;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    }
+    .score-pill {
+      background: rgba(26, 32, 44, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 4px 14px;
+      border-radius: 14px;
+      font-size: 12px;
+      color: #ccc;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 12px;
+    }
+    .score-val {
+      font-weight: 800;
+      color: #FFD700;
+    }
+    .board-container {
+      position: relative;
+      width: min(88vw, 680px);
+      height: min(88vw, 680px);
+      border-radius: 50%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 0 6px rgba(189, 199, 208, 0.25);
+      transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+      cursor: grab;
+      touch-action: none;
+    }
+    .board-container.view-3d {
+      transform: perspective(1000px) rotateX(28deg) rotateZ(0deg);
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: block;
+    }
+    .cards-tray {
+      width: 100%;
+      max-width: 680px;
+      margin-top: 18px;
+      background: rgba(18, 22, 32, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    }
+    .cards-title {
+      font-size: 12px;
+      color: #9ea7b3;
+      font-weight: 600;
+    }
+    .cards-hand {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .play-card {
+      width: 54px;
+      height: 80px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      color: #111;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .play-card.red {
+      color: #d32f2f;
+    }
+    .play-card.selected {
+      border: 2.5px solid #FFD700;
+      transform: translateY(-8px);
+      box-shadow: 0 8px 20px rgba(255, 215, 0, 0.45);
+    }
+    .play-card .val {
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .play-card .suit {
+      font-size: 24px;
+      text-align: center;
+      line-height: 1;
+    }
+    .legend {
+      display: flex;
+      gap: 14px;
+      margin-top: 14px;
+      font-size: 12px;
+      color: #aaa;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-group">
+      <h1>معاينة رقعة جاكارو الواقعية <span class="badge">مطابقة للصورة 100%</span></h1>
+      <p>80 حفرة مسار عام (5 حفر كاملة في كل زاوية) • 16 حفرة أمان • 4 بيوت زجاجية</p>
+    </div>
+    <a href="/" class="btn">🏠 الرئيسية</a>
+  </header>
+
+  <div class="controls-bar">
+    <button id="btnTopDown" class="btn active" onclick="setViewMode(true)">📷 مظهر الصورة (أعلى)</button>
+    <button id="btn3D" class="btn" onclick="setViewMode(false)">🎲 منظور ثلاثي الأبعاد 3D</button>
+    <button class="btn" onclick="resetGame()">🔄 إعادة اللعبة</button>
+    <button class="btn" onclick="showRules()">📜 قوانين الأوراق</button>
+  </div>
+
+  <div class="status-pill" id="statusPill">
+    <span>⭐</span>
+    <span id="statusText">تمت إضافة حفر الزوايا بالكامل! دورك الآن، اختر ورقة وانقر على حجرك</span>
+  </div>
+
+  <div class="score-pill">
+    <span>فريقك 🔵⚫: <span class="score-val" id="team1Score">0/8</span> في الأمان</span>
+    <span>|</span>
+    <span>المنافس 🟢🌐: <span class="score-val" id="team2Score">0/8</span> في الأمان</span>
+  </div>
+
+  <div class="board-container" id="boardBox">
+    <canvas id="jackarooCanvas" width="1000" height="1000"></canvas>
+  </div>
+
+  <div class="cards-tray">
+    <div class="cards-title">أوراقك في اليد (انقر لتحديد الورقة):</div>
+    <div class="cards-hand" id="cardsHand"></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="dot" style="background:#1565C0;"></span> أنت (أزرق ملكي)</div>
+    <div class="legend-item"><span class="dot" style="background:#1E2124; border:1px solid #777;"></span> شريكك (أسود)</div>
+    <div class="legend-item"><span class="dot" style="background:#2E7D32;"></span> سارة (أخضر)</div>
+    <div class="legend-item"><span class="dot" style="background:#4FC3F7;"></span> خالد (سماوي)</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('jackarooCanvas');
+    const ctx = canvas.getContext('2d');
+    const boardBox = document.getElementById('boardBox');
+    const statusText = document.getElementById('statusText');
+    const team1ScoreEl = document.getElementById('team1Score');
+    const team2ScoreEl = document.getElementById('team2Score');
+    const cardsHandEl = document.getElementById('cardsHand');
+
+    let isTopDown = true;
+    let activeCardIndex = 0;
+    let hand = ['A♠', 'K♥', '7♦', '4♣', 'J♠'];
+    const deck = ['10♦', 'Q♣', '5♥', '2♠', '8♦', '6♠', '3♣', '9♥', 'K♦', 'A♣'];
+    let lastPlayedCard = 'A♠';
+    let selectedMarbleId = null;
+
+    const playerColors = ['#1565C0', '#2E7D32', '#1E2124', '#4FC3F7'];
+    const playerSecondary = ['#64B5F6', '#81C784', '#616161', '#E1F5FE'];
+    const spawnSlots = [0, 60, 40, 20];
+
+    let marbles = [];
+    function initMarbles() {
+      marbles = [];
+      for (let p = 0; p < 4; p++) {
+        for (let m = 0; m < 4; m++) {
+          marbles.push({
+            id: p * 4 + m,
+            ownerId: p,
+            index: m,
+            color: playerColors[p],
+            secColor: playerSecondary[p],
+            location: 'home',
+            posIndex: m
+          });
+        }
+      }
+    }
+
+    const center = { x: 500, y: 500 };
+    const boardRadius = 472;
+    const cardWellRadius = 138;
+    const w = 72;
+    const tipY = 422;
+    const colStep = 35.5;
+
+    // 20 holes template with 5 holes in each corner curve!
+    const quarterTemplate = [
+      { x: -w, y: tipY },
+      { x: -w, y: tipY - colStep * 1 },
+      { x: -w, y: tipY - colStep * 2 },
+      { x: -w, y: tipY - colStep * 3 },
+      { x: -w, y: tipY - colStep * 4 },
+      { x: -w, y: tipY - colStep * 5 },
+      { x: -111.5, y: 229.2 }, // Curve 1
+      { x: -147.9, y: 207.6 }, // Curve 2
+      { x: -180.2, y: 180.2 }, // Curve 3 (Corner apex!)
+      { x: -207.6, y: 147.9 }, // Curve 4
+      { x: -229.2, y: 111.5 }, // Curve 5
+      { x: -244.5, y: w },
+      { x: -280.0, y: w },
+      { x: -315.5, y: w },
+      { x: -351.0, y: w },
+      { x: -386.5, y: w },
+      { x: -tipY, y: w * 0.5 },
+      { x: -tipY, y: 0.0 },
+      { x: -tipY, y: -w * 0.5 },
+      { x: -tipY, y: -w },
+    ];
+
+    const angles = [0.0, 3 * Math.PI / 2, Math.PI, Math.PI / 2];
+    const baseOffsets = [0, 60, 40, 20];
+    const dishAngles = [3 * Math.PI / 4, Math.PI / 4, 7 * Math.PI / 4, 5 * Math.PI / 4];
+
+    const trackCoords = {};
+    const safeCoords = {};
+    const homeCoords = {};
+
+    function computeCoordinates() {
+      for (let p = 0; p < 4; p++) {
+        const ang = angles[p];
+        const base = baseOffsets[p];
+
+        const rotate = (pt) => ({
+          x: center.x + (pt.x * Math.cos(ang) - pt.y * Math.sin(ang)),
+          y: center.y + (pt.x * Math.sin(ang) + pt.y * Math.cos(ang))
+        });
+
+        // 20 track holes per player (80 total)
+        for (let i = 0; i < quarterTemplate.length; i++) {
+          const gIdx = (base + i) % 80;
+          trackCoords[gIdx] = rotate(quarterTemplate[i]);
+        }
+
+        // 4 Safe holes per player (16 total)
+        for (let s = 0; s < 4; s++) {
+          const sY = tipY - colStep * (s + 1);
+          safeCoords[`p${p}_s${s}`] = rotate({ x: 0, y: sY });
+        }
+
+        // 4 Corner Home Dishes
+        const dAng = dishAngles[p];
+        const dishCenter = {
+          x: center.x + Math.cos(dAng) * 332,
+          y: center.y + Math.sin(dAng) * 332
+        };
+        const hGap = 17.5;
+        const hOffsets = [
+          { x: -hGap, y: -hGap },
+          { x: hGap, y: -hGap },
+          { x: -hGap, y: hGap },
+          { x: hGap, y: hGap },
+        ];
+        for (let h = 0; h < 4; h++) {
+          homeCoords[`p${p}_h${h}`] = {
+            x: dishCenter.x + hOffsets[h].x,
+            y: dishCenter.y + hOffsets[h].y
+          };
+        }
+      }
+    }
+
+    function renderBoard() {
+      ctx.clearRect(0, 0, 1000, 1000);
+
+      // 1. Oriental Carpet Background
+      const carpetGrad = ctx.createRadialGradient(500, 500, 100, 500, 500, 500);
+      carpetGrad.addColorStop(0, '#9E182B');
+      carpetGrad.addColorStop(0.5, '#7B0F1F');
+      carpetGrad.addColorStop(1, '#4A0610');
+      ctx.fillStyle = carpetGrad;
+      ctx.fillRect(0, 0, 1000, 1000);
+
+      ctx.strokeStyle = 'rgba(247, 238, 217, 0.16)';
+      ctx.lineWidth = 1.6;
+      ctx.strokeRect(16, 16, 968, 968);
+      ctx.strokeStyle = 'rgba(223, 184, 108, 0.2)';
+      ctx.strokeRect(26, 26, 948, 948);
+
+      // 2. Circular Slate Board
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.75)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 14;
+
+      const boardGrad = ctx.createRadialGradient(420, 400, 40, 500, 500, boardRadius);
+      boardGrad.addColorStop(0, '#677788');
+      boardGrad.addColorStop(0.45, '#5A697A');
+      boardGrad.addColorStop(0.80, '#4C5969');
+      boardGrad.addColorStop(1, '#3F4B59');
+      ctx.fillStyle = boardGrad;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, boardRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.strokeStyle = '#D3DBE2';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, boardRadius - 2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 3. Center Birch Well
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 12;
+      const wellGrad = ctx.createRadialGradient(470, 470, 10, 500, 500, cardWellRadius);
+      wellGrad.addColorStop(0, '#F3E7CF');
+      wellGrad.addColorStop(0.65, '#E5D3AF');
+      wellGrad.addColorStop(1, '#D2BD93');
+      ctx.fillStyle = wellGrad;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, cardWellRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.strokeStyle = '#C8A858';
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, cardWellRadius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 4. Center Discard Card
+      if (lastPlayedCard) {
+        ctx.save();
+        ctx.translate(center.x, center.y);
+        ctx.rotate(-0.08);
+        ctx.shadowColor = 'rgba(0,0,0,0.35)';
+        ctx.shadowBlur = 6;
+        ctx.fillStyle = '#FCFCFC';
+        ctx.beginPath();
+        ctx.roundRect(-27, -39, 54, 78, 5);
+        ctx.fill();
+        ctx.strokeStyle = '#D6D6D6';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        const isRed = lastPlayedCard.includes('♥') || lastPlayedCard.includes('♦');
+        ctx.fillStyle = isRed ? '#C62828' : '#212121';
+        ctx.font = 'bold 10px Tajawal';
+        ctx.fillText(lastPlayedCard, -22, -26);
+        ctx.font = '22px Tajawal';
+        ctx.textAlign = 'center';
+        ctx.fillText(lastPlayedCard.slice(-1), 0, 10);
+        ctx.restore();
+      }
+
+      // 5. Four Corner Dishes
+      for (let p = 0; p < 4; p++) {
+        const dAng = dishAngles[p];
+        const dx = center.x + Math.cos(dAng) * 332;
+        const dy = center.y + Math.sin(dAng) * 332;
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 8;
+        const dishGrad = ctx.createRadialGradient(dx, dy, 5, dx, dy, 54);
+        dishGrad.addColorStop(0, '#47515C');
+        dishGrad.addColorStop(0.7, '#38404A');
+        dishGrad.addColorStop(1, '#282E35');
+        ctx.fillStyle = dishGrad;
+        ctx.beginPath();
+        ctx.arc(dx, dy, 54, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.strokeStyle = '#C0CAD5';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.arc(dx, dy, 54, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // 6. Draw Holes
+      for (const key in homeCoords) {
+        drawHole(homeCoords[key], 11.5);
+      }
+      for (const key in safeCoords) {
+        drawHole(safeCoords[key], 12);
+      }
+      for (const key in trackCoords) {
+        const idx = parseInt(key);
+        const isSpawn = spawnSlots.includes(idx);
+        drawHole(trackCoords[key], 12, isSpawn);
+      }
+
+      // 7. Draw Marbles
+      for (const m of marbles) {
+        const pt = getMarblePos(m);
+        if (!pt) continue;
+
+        const isSel = selectedMarbleId === m.id;
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 2.5;
+        ctx.shadowOffsetY = 3.5;
+
+        const mGrad = ctx.createRadialGradient(pt.x - 4, pt.y - 4, 1, pt.x, pt.y, 13.5);
+        mGrad.addColorStop(0, m.secColor);
+        mGrad.addColorStop(0.4, m.color);
+        mGrad.addColorStop(0.85, m.color);
+        mGrad.addColorStop(1, '#111');
+        ctx.fillStyle = mGrad;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 13.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.beginPath();
+        ctx.arc(pt.x - 4.5, pt.y - 4.5, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (isSel) {
+          ctx.strokeStyle = '#FFD700';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 16.5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawHole(pt, radius, isSpawn = false) {
+      const wGrad = ctx.createRadialGradient(pt.x - 3, pt.y - 3, 1, pt.x, pt.y, radius);
+      wGrad.addColorStop(0, '#F0E3CA');
+      wGrad.addColorStop(0.65, '#E2CDA6');
+      wGrad.addColorStop(1, '#CEB68B');
+      ctx.fillStyle = wGrad;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      const sGrad = ctx.createRadialGradient(pt.x - 5, pt.y - 5, 1, pt.x, pt.y, radius);
+      sGrad.addColorStop(0, 'rgba(0,0,0,0.65)');
+      sGrad.addColorStop(0.6, 'rgba(0,0,0,0.25)');
+      sGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = sGrad;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(38, 43, 50, 0.85)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      if (isSpawn) {
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, radius + 2.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    function getMarblePos(m) {
+      if (m.location === 'home') {
+        return homeCoords[`p${m.ownerId}_h${m.index}`];
+      } else if (m.location === 'safe') {
+        return safeCoords[`p${m.ownerId}_s${m.posIndex}`];
+      } else if (m.location === 'track') {
+        return trackCoords[m.posIndex];
+      }
+      return null;
+    }
+
+    function setViewMode(topDown) {
+      isTopDown = topDown;
+      document.getElementById('btnTopDown').classList.toggle('active', topDown);
+      document.getElementById('btn3D').classList.toggle('active', !topDown);
+      boardBox.classList.toggle('view-3d', !topDown);
+    }
+
+    function renderCards() {
+      cardsHandEl.innerHTML = '';
+      hand.forEach((c, idx) => {
+        const isRed = c.includes('♥') || c.includes('♦');
+        const div = document.createElement('div');
+        div.className = `play-card ${isRed ? 'red' : ''} ${idx === activeCardIndex ? 'selected' : ''}`;
+        div.onclick = () => selectCard(idx);
+        div.innerHTML = `
+          <div class="val">${c}</div>
+          <div class="suit">${c.slice(-1)}</div>
+          <div class="val" style="align-self:flex-end;">${c.slice(0, -1)}</div>
+        `;
+        cardsHandEl.appendChild(div);
+      });
+    }
+
+    function selectCard(idx) {
+      activeCardIndex = idx;
+      selectedMarbleId = null;
+      renderCards();
+      statusText.innerText = `اخترت الورقة ${hand[idx]}! انقر على حجرك لتحريكه`;
+      renderBoard();
+    }
+
+    function getCardSteps(c) {
+      if (c.startsWith('A')) return 1;
+      if (c.startsWith('K')) return 13;
+      if (c.startsWith('Q')) return 12;
+      if (c.startsWith('J')) return 11;
+      if (c.startsWith('10')) return 10;
+      if (c.startsWith('9')) return 9;
+      if (c.startsWith('8')) return 8;
+      if (c.startsWith('7')) return 7;
+      if (c.startsWith('6')) return 6;
+      if (c.startsWith('5')) return 5;
+      if (c.startsWith('4')) return -4;
+      if (c.startsWith('3')) return 3;
+      if (c.startsWith('2')) return 2;
+      return 1;
+    }
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scale = 1000 / rect.width;
+      const x = (e.clientX - rect.left) * scale;
+      const y = (e.clientY - rect.top) * scale;
+
+      const card = hand[activeCardIndex];
+      const isJack = card.startsWith('J');
+
+      for (const m of marbles) {
+        const pt = getMarblePos(m);
+        if (!pt) continue;
+        const dist = Math.hypot(pt.x - x, pt.y - y);
+        if (dist <= 24) {
+          handleMarbleClick(m);
+          return;
+        }
+      }
+    });
+
+    function handleMarbleClick(m) {
+      const card = hand[activeCardIndex];
+      const isKingOrAce = card.startsWith('K') || card.startsWith('A');
+      const isJack = card.startsWith('J');
+
+      if (isJack && selectedMarbleId !== null) {
+        const myM = marbles.find(x => x.id === selectedMarbleId);
+        if (myM && myM.location === 'track' && m.location === 'track' && m.ownerId !== myM.ownerId) {
+          const temp = myM.posIndex;
+          myM.posIndex = m.posIndex;
+          m.posIndex = temp;
+          statusText.innerText = 'تم تبديل حجرين بالولد (J) بنجاح! 🔄';
+          finishPlayerMove();
+          return;
+        }
+      }
+
+      if (m.ownerId !== 0) return;
+
+      if (m.location === 'home' && isKingOrAce) {
+        m.location = 'track';
+        m.posIndex = spawnSlots[0];
+        checkCapture(spawnSlots[0], 0);
+        statusText.innerText = 'أخرجت حجراً من البيت إلى خط البداية! 🚀';
+        finishPlayerMove();
+      } else if (m.location === 'safe') {
+        const step = getCardSteps(card);
+        if (step > 0 && m.posIndex + step < 4) {
+          m.posIndex += step;
+          statusText.innerText = `تقدم الحجر داخل الأمان إلى الحفرة ${m.posIndex + 1}! 🛡️`;
+          finishPlayerMove();
+        }
+      } else if (m.location === 'track') {
+        if (isJack) {
+          selectedMarbleId = m.id;
+          statusText.innerText = 'اختر حجر أحد المنافسين على المسار لتبديل الأماكن معه بالولد (J) 🔄';
+          renderBoard();
+          return;
+        }
+
+        const step = getCardSteps(card);
+        const spawn = spawnSlots[0];
+
+        if (step === -4) {
+          m.posIndex = (m.posIndex - 4 + 80) % 80;
+          checkCapture(m.posIndex, 0);
+          statusText.innerText = 'رجوع 4 خطوات للخلف نحو بوابة الأمان! ⏪';
+          finishPlayerMove();
+        } else {
+          const dist = (m.posIndex - spawn + 80) % 80;
+          if (dist + step >= 78) {
+            const safeIdx = (dist + step) - 78;
+            if (safeIdx >= 0 && safeIdx < 4) {
+              m.location = 'safe';
+              m.posIndex = safeIdx;
+              statusText.innerText = 'دخل الحجر مسار الأمان والقلعة بسلام! 🏰';
+            } else {
+              m.posIndex = (m.posIndex + step + 80) % 80;
+              checkCapture(m.posIndex, 0);
+            }
+          } else {
+            m.posIndex = (m.posIndex + step + 80) % 80;
+            checkCapture(m.posIndex, 0);
+            statusText.innerText = `تحرك الحجر ${step} خطوات للأمام! 🎯`;
+          }
+          finishPlayerMove();
+        }
+      }
+    }
+
+    function checkCapture(trackIdx, capturer) {
+      for (const m of marbles) {
+        if (m.ownerId !== capturer && m.location === 'track' && m.posIndex === trackIdx) {
+          m.location = 'home';
+          m.posIndex = m.index;
+          statusText.innerText = 'أكلت حجر المنافس وأرجعته للبيت! 💥';
+          break;
+        }
+      }
+    }
+
+    function finishPlayerMove() {
+      lastPlayedCard = hand[activeCardIndex];
+      hand[activeCardIndex] = deck[Math.floor(Math.random() * deck.length)];
+      selectedMarbleId = null;
+      updateScores();
+      renderCards();
+      renderBoard();
+
+      setTimeout(playBotTurns, 700);
+    }
+
+    function playBotTurns() {
+      const bots = [
+        { id: 1, name: 'سارة (أخضر)' },
+        { id: 2, name: 'فهد (أسود)' },
+        { id: 3, name: 'خالد (سماوي)' }
+      ];
+
+      let idx = 0;
+      function nextBot() {
+        if (idx >= bots.length) {
+          statusText.innerText = 'دورك الآن! اختر ورقة ثم انقر على حجرك 🌟';
+          renderBoard();
+          return;
+        }
+        const bot = bots[idx];
+        statusText.innerText = `دور ${bot.name} يلعب...`;
+        
+        const bMarbles = marbles.filter(m => m.ownerId === bot.id);
+        const homeM = bMarbles.find(m => m.location === 'home');
+        const trackM = bMarbles.find(m => m.location === 'track');
+
+        if (homeM && Math.random() > 0.5) {
+          homeM.location = 'track';
+          homeM.posIndex = spawnSlots[bot.id];
+          checkCapture(spawnSlots[bot.id], bot.id);
+        } else if (trackM) {
+          const steps = Math.floor(Math.random() * 6) + 1;
+          trackM.posIndex = (trackM.posIndex + steps) % 80;
+          checkCapture(trackM.posIndex, bot.id);
+        }
+
+        updateScores();
+        renderBoard();
+        idx++;
+        setTimeout(nextBot, 600);
+      }
+      nextBot();
+    }
+
+    function updateScores() {
+      const t1 = marbles.filter(m => (m.ownerId === 0 || m.ownerId === 2) && m.location === 'safe').length;
+      const t2 = marbles.filter(m => (m.ownerId === 1 || m.ownerId === 3) && m.location === 'safe').length;
+      team1ScoreEl.innerText = `${t1}/8`;
+      team2ScoreEl.innerText = `${t2}/8`;
+
+      if (t1 === 8) {
+        alert('🎉 مبروك! حقق فريقك (الأزرق والأسود) الفوز الكبير بالجاكارو!');
+      } else if (t2 === 8) {
+        alert('حظاً أوفر! فاز الفريق المنافس (الأخضر والسماوي).');
+      }
+    }
+
+    function resetGame() {
+      initMarbles();
+      hand = ['A♠', 'K♥', '7♦', '4♣', 'J♠'];
+      lastPlayedCard = 'A♠';
+      selectedMarbleId = null;
+      activeCardIndex = 0;
+      updateScores();
+      renderCards();
+      renderBoard();
+      statusText.innerText = 'تمت إعادة ضبط اللعبة! دورك الآن';
+    }
+
+    function showRules() {
+      alert(
+        '📜 قوانين أوراق جاكارو:\n\n' +
+        '• الشيخ (K): خروج من البيت للبداية أو تحريك 13 خطوة.\n' +
+        '• الواحد (A): خروج للبداية أو تحريك خطوة أو 11 خطوة.\n' +
+        '• الأربعة (4): رجوع 4 خطوات للخلف (للاقتراب الفوري من الأمان!).\n' +
+        '• الولد (J): تبديل مكان حجرك مع أي حجر منافس على المسار.\n' +
+        '• السبعة (7): تحريك 7 خطوات للأمام.\n' +
+        '• الخمسة (5): تحريك أي حجر 5 خطوات.\n' +
+        '• البنت (Q): تحريك 12 خطوة للأمام.'
+      );
+    }
+
+    computeCoordinates();
+    initMarbles();
+    renderCards();
+    renderBoard();
+  </script>
+</body>
+</html>

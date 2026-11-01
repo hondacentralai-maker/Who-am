@@ -28,9 +28,13 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
   late final UnityPlayerController _unityController;
   final GameAudioService _audioService = GameAudioService();
   bool _isSoundEnabled = true;
-  final String _activePlayer = 'أنت (الأزرق)';
+  final String _activePlayer = 'أنت (الأزرق الملكي)';
   String _gameStatus = 'دورك للعب ورقة ثم تحريك حجر';
+  bool _isTopDownView = true; // Defaults to exact photo view
   int _selectedCardIndex = 0; // Default selected card in hand
+  String _lastPlayedCard = 'A♠';
+  int _team1Score = 0;
+  int _team2Score = 0;
   final List<String> _cardsHand = ['A♠', 'K♥', '7♦', '4♣', 'J♠'];
   final List<String> _deck = ['10♦', 'Q♣', '5♥', '2♠', '8♦', '6♠', '3♣', '9♥', 'K♦', 'A♣'];
   final List<String> _eventLog = [];
@@ -93,6 +97,7 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
 
     setState(() {
       _selectedCardIndex = index;
+      _lastPlayedCard = card;
       _gameStatus = 'تم لعب $card.. المس حجراً من أحجارك لتحريكه';
     });
 
@@ -141,6 +146,92 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
     );
   }
 
+  void _showVictoryDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1B2232),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: _goldColor, width: 2),
+        ),
+        title: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.emoji_events_rounded, color: _goldColor, size: 28),
+            SizedBox(width: 8),
+            Text(
+              'مبروك الفوز!',
+              style: TextStyle(color: Colors.white, fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70, fontFamily: 'Cairo', fontSize: 14),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _goldColor,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _boardKey.currentState?.resetCamera();
+            },
+            child: const Text('جولة جديدة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRulesDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1B2232),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: _goldColor.withValues(alpha: 0.6)),
+        ),
+        title: const Text(
+          'قوانين أوراق الجاكارو 92 حفرة',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: _goldColor, fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _RuleItem(card: 'الشيخ (K)', desc: 'خروج من البيت للبداية أو تحريك 13 خطوة وأكل أي حجر في الطريق.'),
+              _RuleItem(card: 'الواحد (A)', desc: 'خروج من البيت للبداية أو تحريك خطوة واحدة أو 11 خطوة.'),
+              _RuleItem(card: 'الأربعة (4)', desc: 'رجوع 4 خطوات للخلف (للاقتراب الفوري من بوابة الأمان!).'),
+              _RuleItem(card: 'الولد (J)', desc: 'تبديل مكان حجرك مع أي حجر منافس على المسار العام.'),
+              _RuleItem(card: 'السبعة (7)', desc: 'تحريك 7 خطوات، أو تقسيمها بين حجرين (مثلاً 4 + 3).'),
+              _RuleItem(card: 'الخمسة (5)', desc: 'تحريك أي حجر 5 خطوات (حجرك، حجر شريكك، أو حجر منافس).'),
+              _RuleItem(card: 'البنت (Q)', desc: 'تحريك 12 خطوة للأمام.'),
+              _RuleItem(card: 'العشرة (10)', desc: 'تحريك 10 خطوات للأمام.'),
+              _RuleItem(card: 'الشراكة', desc: 'الأزرق مع الأسود ضد الأخضر مع السماوي. عند إكمال 4 أحجار تساعد شريكك!'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('فهمت', style: TextStyle(color: _goldColor, fontFamily: 'Cairo')),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _toggleSound() {
     setState(() {
       _isSoundEnabled = !_isSoundEnabled;
@@ -161,65 +252,103 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Realistic 3D Jackaroo Board Viewport
+          // 1. Realistic 92-Hole Jackaroo Board Viewport
           Positioned.fill(
             child: Jackaroo3DBoardView(
               key: _boardKey,
               activeCard: currentCard,
+              lastPlayedCard: _lastPlayedCard,
+              isTopDownView: _isTopDownView,
               onStatusMessage: (msg) {
                 setState(() => _gameStatus = msg);
               },
+              onScoresUpdated: (t1, t2) {
+                setState(() {
+                  _team1Score = t1;
+                  _team2Score = t2;
+                });
+              },
+              onGameWon: _showVictoryDialog,
               onTurnFinished: _onTurnFinished,
             ),
           ),
 
           // 2. HUD Overlay
           UnityViewOverlay(
-            title: 'جاكارو 3D الواقعية',
-            subtitle: widget.isOnline ? 'غرفة ${widget.roomId ?? "#101"}' : 'لعب محلي ضد الذكاء الاصطناعي',
+            title: 'جاكارو 92 حفرة الواقعية',
+            subtitle: widget.isOnline ? 'غرفة ${widget.roomId ?? "#101"}' : 'لوحة 92 حفرة • أزرق وأخضر وأسود وسماوي',
             isSoundEnabled: _isSoundEnabled,
             onExit: () => Navigator.of(context).pop(),
             onToggleSound: _toggleSound,
             floatingWidgets: [
-              // Status Pill
+              // Status Pill & Team Scores Pill
               Positioned(
-                top: 72,
+                top: 70,
                 left: 16,
                 right: 16,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.75),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: _goldColor.withValues(alpha: 0.5)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.stars_rounded, color: _goldColor, size: 16),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            '$_activePlayer • $_gameStatus',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: _goldColor.withValues(alpha: 0.5)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          ],
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.stars_rounded, color: _goldColor, size: 16),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                '$_activePlayer • $_gameStatus',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 6),
+                    // Partnership Score Pill
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF161C26).withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('فريقك 🔵⚫: ', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                            Text('$_team1Score/8', style: const TextStyle(color: _goldColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 12),
+                            Container(width: 1, height: 12, color: Colors.white24),
+                            const SizedBox(width: 12),
+                            const Text('المنافس 🟢🌐: ', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                            Text('$_team2Score/8', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -270,7 +399,7 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Hand Title & Action Button
+          // Hand Title & Action Buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -282,29 +411,102 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              InkWell(
-                onTap: () {
-                  _boardKey.currentState?.resetCamera();
-                  _unityController.postJson('JackarooBoard', 'ResetCamera', {});
-                  PreferencesService.triggerHaptic(AppHapticType.light);
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // View Toggle Button (Top-down Photo vs 3D Perspective)
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isTopDownView = !_isTopDownView;
+                      });
+                      _boardKey.currentState?.setViewMode(_isTopDownView);
+                      PreferencesService.triggerHaptic(AppHapticType.selection);
+                    },
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      margin: const EdgeInsets.only(left: 6),
+                      decoration: BoxDecoration(
+                        color: _isTopDownView
+                            ? _goldColor.withValues(alpha: 0.25)
+                            : Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _isTopDownView ? _goldColor : Colors.white.withValues(alpha: 0.15),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isTopDownView ? Icons.camera_alt_rounded : Icons.view_in_ar_rounded,
+                            color: _isTopDownView ? _goldColor : Colors.white70,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _isTopDownView ? 'مظهر الصورة' : 'منظور 3D',
+                            style: TextStyle(
+                              color: _isTopDownView ? _goldColor : Colors.white70,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.crop_rotate_rounded, color: Colors.white70, size: 14),
-                      SizedBox(width: 4),
-                      Text('إعادة زاوية 3D', style: TextStyle(color: Colors.white70, fontSize: 10)),
-                    ],
+
+                  // Rules Button
+                  InkWell(
+                    onTap: _showRulesDialog,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.help_outline_rounded, color: _goldColor, size: 14),
+                          SizedBox(width: 2),
+                          Text('القوانين', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+
+                  // Reset Camera
+                  InkWell(
+                    onTap: () {
+                      _boardKey.currentState?.resetCamera();
+                      _unityController.postJson('JackarooBoard', 'ResetCamera', {});
+                      PreferencesService.triggerHaptic(AppHapticType.light);
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.refresh_rounded, color: Colors.white70, size: 14),
+                          SizedBox(width: 2),
+                          Text('ضبط', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -403,6 +605,44 @@ class _ReactionButton extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         child: Text(emoji, style: const TextStyle(fontSize: 22)),
+      ),
+    );
+  }
+}
+
+class _RuleItem extends StatelessWidget {
+  final String card;
+  final String desc;
+
+  const _RuleItem({required this.card, required this.desc});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '• $card: ',
+            style: const TextStyle(
+              color: Color(0xFFD4AF37),
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              fontFamily: 'Cairo',
+            ),
+          ),
+          Expanded(
+            child: Text(
+              desc,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontFamily: 'Cairo',
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

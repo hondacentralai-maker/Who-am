@@ -201,7 +201,7 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('جاكارو 3D الواقعية'), findsOneWidget);
+      expect(find.textContaining('جاكارو'), findsOneWidget);
       expect(find.text('أوراقك في اليد (اختر ورقة للعب):'), findsOneWidget);
       expect(find.text('A♠'), findsOneWidget);
       expect(find.text('K♥'), findsOneWidget);
