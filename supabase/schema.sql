@@ -1,13 +1,15 @@
 -- ====================================================================
--- Arabic Couples Game (من أنا؟ • لعبة الأزواج)
--- Complete Supabase Database Schema with Row Level Security (RLS) & Realtime
--- Production Optimized for Low-Latency & High Security
+-- Arabic Couples Game (من أنا؟ • لعبة الأزواج والجمعات)
+-- Complete Supabase Production Database Schema
+-- Run this ONCE in the Supabase SQL Editor
 -- ====================================================================
 
--- 1. Enable pgcrypto for UUID generation
+-- 1. Enable pgcrypto extension for secure UUID generation
 create extension if not exists pgcrypto;
 
--- 2. Profiles Table
+-- ====================================================================
+-- 2. Profiles Table (بيانات اللاعبين)
+-- ====================================================================
 create table if not exists public.profiles (
   id uuid references auth.users on delete cascade primary key,
   display_name text,
@@ -18,11 +20,11 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
-drop policy if exists "Users can read their own profile" on public.profiles;
-create policy "Users can read their own profile"
+drop policy if exists "Authenticated users can read profiles" on public.profiles;
+create policy "Authenticated users can read profiles"
   on public.profiles for select
   to authenticated
-  using ((select auth.uid()) = id);
+  using (true);
 
 drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
@@ -37,7 +39,32 @@ create policy "Users can insert their own profile"
   to authenticated
   with check ((select auth.uid()) = id);
 
--- 3. Game Rooms Table
+-- Auto-create profile trigger on new user signup
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id, display_name, avatar_url)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1), 'لاعب'),
+    coalesce(new.raw_user_meta_data->>'avatar_url', '')
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- ====================================================================
+-- 3. Game Rooms Table (غرف اللعب أونلاين وجاكارو 3D)
+-- ====================================================================
 create table if not exists public.game_rooms (
   id uuid primary key default gen_random_uuid(),
   room_code text unique not null,
@@ -53,7 +80,6 @@ create table if not exists public.game_rooms (
   expires_at timestamptz not null default (now() + interval '24 hours')
 );
 
--- Fast lookup indexes
 create index if not exists game_rooms_code_idx on public.game_rooms(room_code);
 create index if not exists game_rooms_status_idx on public.game_rooms(status);
 create index if not exists game_rooms_host_id_idx on public.game_rooms(host_id);
@@ -93,11 +119,13 @@ create policy "Participants can update room status"
     (status = 'waiting' and guest_id is null)
   );
 
--- 4. Room Events Table (Realtime multiplayer communication)
+-- ====================================================================
+-- 4. Room Events Table (أحداث اللعب المباشر وتزامن البطاقات والحركات)
+-- ====================================================================
 create table if not exists public.room_events (
   id bigint generated always as identity primary key,
   room_id uuid not null references public.game_rooms(id) on delete cascade,
-  event_type text not null check (event_type in ('joined', 'card_revealed', 'card_skipped', 'card_completed', 'round_finished', 'game_mode_change', 'know_me_action', 'guess_who_action', 'jackaroo_action')),
+  event_type text not null,
   card_id text,
   actor_role text not null check (actor_role in ('host', 'guest', 'system')),
   event_data jsonb,
@@ -132,7 +160,9 @@ create policy "Participants can insert room events"
     )
   );
 
--- 5. User Favorites Sync Table
+-- ====================================================================
+-- 5. User Favorites Table (المفضلة الشخصية)
+-- ====================================================================
 create table if not exists public.user_favorites (
   user_id uuid primary key references auth.users(id) on delete cascade,
   card_ids text[] not null default '{}',
@@ -148,11 +178,12 @@ create policy "Users can manage their own favorites"
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
--- 6. Enable Realtime Replication Full Identity
+-- ====================================================================
+-- 6. Realtime Replication Configuration (تفعيل البث اللحظي للغرف)
+-- ====================================================================
 alter table public.game_rooms replica identity full;
 alter table public.room_events replica identity full;
 
--- 7. Enable Realtime Publications (Safe & Idempotent for Supabase)
 do $$
 begin
   if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
@@ -178,7 +209,9 @@ begin
   end if;
 end $$;
 
--- 8. Routine Housekeeping: Expired Game Rooms Cleanup
+-- ====================================================================
+-- 7. Automated Cleanup for Expired Rooms (تنظيف دوري تلقائي)
+-- ====================================================================
 create or replace function public.cleanup_expired_game_rooms()
 returns void
 language sql
