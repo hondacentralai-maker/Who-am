@@ -202,10 +202,10 @@ class _PartyGamesHubScreenState extends State<PartyGamesHubScreen> {
     ),
     _PartyGameDef(
       id: 'jackaroo_3d',
-      title: 'جاكارو 3D الواقعية (Unity Player) 🎲',
-      subtitle: 'طاولة جاكارو ثلاثية الأبعاد كاملة بمحرك Unity مع أوراق اللعب، زوايا كاميرا حرة، وتفاعلات حية!',
+      title: 'جاكارو • اللوحة المعتمدة 🎲',
+      subtitle: 'اللوحة الزرقاء بنفس الصورة المرجعية، بكرات تفاعلية وترقيم من 1 إلى 18 لكل جزء.',
       emoji: '🎲',
-      tag: '2 - 4 لاعبين • طاولة 3D ومحرك ألعاب واقعي',
+      tag: 'لاعب ضد ثلاثة لاعبين تلقائيين • شراكة وأوراق',
       color: const Color(0xFFEDE7F6),
       borderColor: const Color(0xFF673AB7),
       categories: const ['2 لاعبين', 'تكتيك وذكاء'],

@@ -210,7 +210,7 @@ void main() {
       await tester.tap(find.text('A♠'));
       await tester.pump();
 
-      expect(find.textContaining('تم لعب A♠'), findsOneWidget);
+      expect(find.textContaining('تم اختيار A♠'), findsOneWidget);
     });
   });
 }
