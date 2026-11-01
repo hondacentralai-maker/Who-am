@@ -1,10 +1,12 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../services/game_audio_service.dart';
 import '../../services/preferences_service.dart';
+import '../../widgets/jackaroo_3d_board_view.dart';
 import '../../widgets/unity/unity_player.dart';
 
-/// Screen hosting the 3D Jackaroo experience powered by the Unity Player Widget.
-/// Combines the 3D engine viewport with Flutter HUD, cards hand, and interactive controls.
+/// Screen hosting the 3D Jackaroo experience.
+/// Combines the realistic 3D tabletop board with Flutter HUD, cards hand, and interactive controls.
 class Jackaroo3DScreen extends StatefulWidget {
   final List<String>? initialPlayers;
   final bool isOnline;
@@ -22,13 +24,15 @@ class Jackaroo3DScreen extends StatefulWidget {
 }
 
 class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
+  final GlobalKey<Jackaroo3DBoardViewState> _boardKey = GlobalKey<Jackaroo3DBoardViewState>();
   late final UnityPlayerController _unityController;
   final GameAudioService _audioService = GameAudioService();
   bool _isSoundEnabled = true;
   final String _activePlayer = 'أنت (الأزرق)';
-  String _gameStatus = 'دورك للعب ورقة';
-  int _selectedCardIndex = 2; // Selected card in hand
+  String _gameStatus = 'دورك للعب ورقة ثم تحريك حجر';
+  int _selectedCardIndex = 0; // Default selected card in hand
   final List<String> _cardsHand = ['A♠', 'K♥', '7♦', '4♣', 'J♠'];
+  final List<String> _deck = ['10♦', 'Q♣', '5♥', '2♠', '8♦', '6♠', '3♣', '9♥', 'K♦', 'A♣'];
   final List<String> _eventLog = [];
 
   static const Color _goldColor = Color(0xFFD4AF37);
@@ -42,9 +46,10 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
       _isSoundEnabled = true;
     }
     _unityController = UnityPlayerController(
-      // On platforms without compiled Unity library, use simulation mode seamlessly
       isMock: true,
     );
+    _unityController.messageStream.listen(_onUnityMessage);
+    _onUnityCreated(_unityController);
   }
 
   @override
@@ -60,7 +65,7 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
       'players': widget.initialPlayers ?? ['أنت', 'خالد', 'سارة', 'فهد'],
     });
 
-    _addLog('تم بدء اتصال محرك Unity 3D بنجاح');
+    _addLog('تم بدء اتصال محرك 3D بنجاح');
   }
 
   void _onUnityMessage(UnityMessage message) {
@@ -88,7 +93,7 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
 
     setState(() {
       _selectedCardIndex = index;
-      _gameStatus = 'تم لعب $card.. جاري تحريك الرخام';
+      _gameStatus = 'تم لعب $card.. المس حجراً من أحجارك لتحريكه';
     });
 
     if (_isSoundEnabled) {
@@ -103,6 +108,16 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
     });
 
     _addLog('لعبت الورقة: $card');
+  }
+
+  void _onTurnFinished() {
+    // Draw a new card from deck to replenish hand
+    if (_cardsHand.isNotEmpty && _selectedCardIndex < _cardsHand.length) {
+      final nextCard = _deck[math.Random().nextInt(_deck.length)];
+      setState(() {
+        _cardsHand[_selectedCardIndex] = nextCard;
+      });
+    }
   }
 
   void _sendEmojiReaction(String emoji) {
@@ -137,18 +152,25 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String currentCard = (_cardsHand.isNotEmpty && _selectedCardIndex < _cardsHand.length)
+        ? _cardsHand[_selectedCardIndex]
+        : 'A♠';
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF0A0D14),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Unity 3D Viewport
-          UnityPlayerWidget(
-            controller: _unityController,
-            initialScene: 'Jackaroo3D',
-            onUnityCreated: _onUnityCreated,
-            onUnityMessage: _onUnityMessage,
-            debugMode: false,
+          // 1. Realistic 3D Jackaroo Board Viewport
+          Positioned.fill(
+            child: Jackaroo3DBoardView(
+              key: _boardKey,
+              activeCard: currentCard,
+              onStatusMessage: (msg) {
+                setState(() => _gameStatus = msg);
+              },
+              onTurnFinished: _onTurnFinished,
+            ),
           ),
 
           // 2. HUD Overlay
@@ -168,12 +190,12 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.7),
+                      color: Colors.black.withValues(alpha: 0.75),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: _goldColor.withValues(alpha: 0.4)),
+                      border: Border.all(color: _goldColor.withValues(alpha: 0.5)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.5),
+                          color: Colors.black.withValues(alpha: 0.6),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -184,12 +206,15 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
                       children: [
                         const Icon(Icons.stars_rounded, color: _goldColor, size: 16),
                         const SizedBox(width: 8),
-                        Text(
-                          '$_activePlayer • $_gameStatus',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                        Flexible(
+                          child: Text(
+                            '$_activePlayer • $_gameStatus',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -259,6 +284,7 @@ class _Jackaroo3DScreenState extends State<Jackaroo3DScreen> {
               ),
               InkWell(
                 onTap: () {
+                  _boardKey.currentState?.resetCamera();
                   _unityController.postJson('JackarooBoard', 'ResetCamera', {});
                   PreferencesService.triggerHaptic(AppHapticType.light);
                 },

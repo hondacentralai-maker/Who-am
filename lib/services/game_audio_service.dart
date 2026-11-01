@@ -138,6 +138,7 @@ class GameAudioService {
   }
 
   Future<void> playMarbleMove() => playMarbleStep();
+  Future<void> playStep() => playMarbleStep();
 
   Future<void> playMarbleEat() async {
     if (!isSoundEnabled || _cachedEatWav == null) return;
@@ -146,6 +147,8 @@ class GameAudioService {
       await _player.play(BytesSource(_cachedEatWav!));
     } catch (_) {}
   }
+
+  Future<void> playEat() => playMarbleEat();
 
   Future<void> playBuzzer() async {
     if (!isSoundEnabled || _cachedBuzzerWav == null) return;
